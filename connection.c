@@ -23,7 +23,7 @@
 #include <pjlib-util.h>
 #include <pjnath.h>
 
-#define THIS_FILE   "client.c"
+#define THIS_FILE   "connection.c"
 
 /* For this demo app, configure longer STUN keep-alive time
  * so that it does't clutter the screen output.
@@ -208,6 +208,7 @@ static int icedemo_worker_thread(void *unused) {
  */
 static void cb_on_rx_data(pj_ice_strans *ice_st, unsigned comp_id, void *pkt,
 		pj_size_t size, const pj_sockaddr_t *src_addr, unsigned src_addr_len) {
+	extern void data_rx(char *data, unsigned int length);
 	char ipstr[PJ_INET6_ADDRSTRLEN + 10];
 
 	PJ_UNUSED_ARG(ice_st);
@@ -217,8 +218,9 @@ static void cb_on_rx_data(pj_ice_strans *ice_st, unsigned comp_id, void *pkt,
 	// Don't do this! It will ruin the packet buffer in case TCP is used!
 	//((char*)pkt)[size] = '\0';
 
-	PJ_LOG(3, (THIS_FILE, "Component %d: received %d bytes data from %s: \"%.*s\"", comp_id, size, pj_sockaddr_print(
-			   src_addr, ipstr, sizeof(ipstr), 3), (unsigned) size, (char*) pkt));
+	PJ_LOG(3, (THIS_FILE, "Component %d: received %d bytes data from %s",
+			   comp_id, size, pj_sockaddr_print(src_addr, ipstr, sizeof(ipstr), 3)));
+	data_rx((char*) pkt, (unsigned) size);
 }
 
 /*
@@ -227,12 +229,15 @@ static void cb_on_rx_data(pj_ice_strans *ice_st, unsigned comp_id, void *pkt,
  */
 static void cb_on_ice_complete(pj_ice_strans *ice_st, pj_ice_strans_op op,
 								   pj_status_t status) {
+	extern void start_communicate();
 	const char *opname = (op == PJ_ICE_STRANS_OP_INIT ? "initialization" :
 								 (op == PJ_ICE_STRANS_OP_NEGOTIATION ?
 								 "negotiation" : "unknown_op"));
 
 	if (status == PJ_SUCCESS) {
 		PJ_LOG(3, (THIS_FILE, "ICE %s successful", opname));
+		if (op == PJ_ICE_STRANS_OP_NEGOTIATION)
+			start_communicate();
 	} else {
 		char errmsg[PJ_ERR_MSG_SIZE];
 
@@ -279,7 +284,7 @@ static pj_status_t icedemo_init(void) {
 	icedemo.ice_cfg.stun_cfg.pf = &icedemo.cp.factory;
 
 	/* Create application memory pool */
-	icedemo.pool = pj_pool_create(&icedemo.cp.factory, "client", 512, 512, NULL);
+	icedemo.pool = pj_pool_create(&icedemo.cp.factory, "connection", 512, 512, NULL);
 
 	/* Create timer heap for timer stuff */
 	CHECK(pj_timer_heap_create(icedemo.pool, 100, &icedemo.ice_cfg.stun_cfg.timer_heap));
@@ -291,7 +296,7 @@ static pj_status_t icedemo_init(void) {
 	 * unless we're on Symbian where the timer heap and ioqueue run
 	 * on themselves.
 	 */
-	CHECK(pj_thread_create(icedemo.pool, "client", &icedemo_worker_thread, NULL, 0, 0, &icedemo.thread));
+	CHECK(pj_thread_create(icedemo.pool, "connection", &icedemo_worker_thread, NULL, 0, 0, &icedemo.thread));
 
 	icedemo.ice_cfg.af = pj_AF_INET();
 
@@ -393,7 +398,7 @@ static void icedemo_create_instance(void) {
 	icecb.on_ice_complete = cb_on_ice_complete;
 
 	/* create the instance */
-	status = pj_ice_strans_create("client", /* object name  */
+	status = pj_ice_strans_create("connection", /* object name  */
 								  &icedemo.ice_cfg, /* settings	    */
 								  icedemo.opt.comp_cnt, /* comp_cnt	    */
 								  NULL, /* user data    */
@@ -414,7 +419,7 @@ static void reset_rem_info(void) {
  * Stop/destroy ICE session.
  * Destroy ICE stream transport instance, invoked from the menu.
  */
-static void icedemo_destroy_instance(int signum) {
+void icedemo_destroy_instance(int signum) {
 	pj_status_t status;
 
 	if (icedemo.icest == NULL) {
@@ -515,7 +520,7 @@ static void icedemo_start_nego(void) {
 /*
  * Send application data to remote agent.
  */
-static void icedemo_send_data(unsigned comp_id, const char *data) {
+void send_data(unsigned comp_id, const char *data) {
 	pj_status_t status;
 
 	if (icedemo.icest == NULL) {
@@ -552,7 +557,7 @@ static void icedemo_send_data(unsigned comp_id, const char *data) {
 /*
  * And here's the main()
  */
-int main(int argc, char *argv[]) {
+int start_connecting() {
 	pj_status_t status;
 
 	icedemo.opt.comp_cnt = 1;	//	Component count
@@ -566,9 +571,6 @@ int main(int argc, char *argv[]) {
 //	icedemo.opt.turn_fingerprint
 //	icedemo.opt.regular
 //	icedemo.opt.log_file
-
-    // Register signal and signal handler
-    signal(SIGINT, icedemo_destroy_instance);
 
     printf("==============icedemo_init\n");
 	status = icedemo_init();
@@ -692,27 +694,5 @@ a=candidate:Hc0a801ec 1 UDP 1694498815 192.168.1.236 36645 typ host
 	printf("==============icedemo_start_nego\n");
 	icedemo_start_nego();
 
-	printf("==============Main LOOP\n");
-	while (1) {
-		sleep(1);
-	}
-
-
-//	if (strcmp(cmd, "send") == 0 || strcmp(cmd, "x") == 0) {
-//
-//		char *comp = strtok(NULL, SEP);
-//
-//		if (!comp) {
-//			PJ_LOG(1, (THIS_FILE, "Error: component ID required"));
-//		} else {
-//			char *data = comp + strlen(comp) + 1;
-//			if (!data)
-//				data = "";
-//			icedemo_send_data(atoi(comp), data);
-//		}
-//
-//	}
-
-	err_exit("Quitting..", PJ_SUCCESS);
 	return 0;
 }

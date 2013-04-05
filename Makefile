@@ -19,15 +19,19 @@ ARM_CFLAGS=-g $(ARM_DEFINES) -I$(ARM_PJ)/pjlib/include -I$(ARM_PJ)/pjnath/includ
 
 all:
 	echo ***ARM***
-	$(ARM_CC) client.c -c -o server.o $(ARM_CFLAGS)
-	$(ARM_CC) server.o -o $(SERVER) $(ARM_LDFLAGS) $(ARM_LIBS)
+	$(ARM_CC) connection.c -c -o $(SERVER)/connection.o $(ARM_CFLAGS)
+	$(ARM_CC) $(SERVER)/main.c -c -o $(SERVER)/main.o $(ARM_CFLAGS)
+	$(ARM_CC) $(SERVER)/connection.o $(SERVER)/main.o -o $(SERVER)/$(SERVER) $(ARM_LDFLAGS) $(ARM_LIBS)
 	echo ***HOST***
-	$(HOST_CC) client.c -c -o client.o $(HOST_CFLAGS)
-	$(HOST_CC) client.o -o $(CLIENT) $(HOST_LDFLAGS) $(HOST_LIBS)
+	$(HOST_CC) connection.c -c -o $(CLIENT)/connection.o $(HOST_CFLAGS)
+	$(HOST_CC) $(CLIENT)/main.c -c -o $(CLIENT)/main.o $(HOST_CFLAGS)
+	$(HOST_CC) $(CLIENT)/connection.o $(CLIENT)/main.o -o $(CLIENT)/$(CLIENT) $(HOST_LDFLAGS) $(HOST_LIBS)
 
 clean:
-	rm -f server.o
-	rm -f client.o
-	rm -f $(SERVER)
-	rm -f $(CLIENT)
+	rm -f $(SERVER)/connection.o
+	rm -f $(CLIENT)/connection.o
+	rm -f $(SERVER)/main.o
+	rm -f $(CLIENT)/main.o
+	rm -f $(SERVER)/$(SERVER)
+	rm -f $(CLIENT)/$(CLIENT)
 	
