@@ -18,10 +18,12 @@
  */
 #include <stdio.h>
 #include <stdlib.h>
-#include <signal.h>
+#include <unistd.h>
+#include <assert.h>
 #include <pjlib.h>
 #include <pjlib-util.h>
 #include <pjnath.h>
+#include "http.h"
 
 #define THIS_FILE   "connection.c"
 
@@ -572,12 +574,28 @@ int start_connecting() {
 //	icedemo.opt.regular
 //	icedemo.opt.log_file
 
+	pj_log_set_level(5);
     printf("==============icedemo_init\n");
 	status = icedemo_init();
 	if (status != PJ_SUCCESS)
 		return 1;
 
 	sleep(2);
+	if (http_request(URL_PREPARE_CONNECTION) != 0) {
+		printf("ERROR %s() Can't clear connection information on server.\n", __FUNCTION__);
+		icedemo_destroy_instance(3);
+	}
+	char *description = NULL;
+	if (!is_operation_successfull(&description)) {
+		printf("ERROR %s() Incorrect request to server: ", __FUNCTION__);
+		if (description != NULL)
+			printf("\"%s\"\n", description);
+		else
+			printf("\"\"\n");
+		icedemo_destroy_instance(3);
+	}
+	assert(description != NULL);
+	printf("INFO  %s() Operation result: \"%s\"\n", __FUNCTION__, description);
 	printf("==============icedemo_create_instance\n");
 	icedemo_create_instance();
 	sleep(2);
@@ -594,7 +612,7 @@ int start_connecting() {
 
 	if (icedemo.icest == NULL) {
 		PJ_LOG(1, (THIS_FILE, "Error: No ICE instance, create it first"));
-		return;
+		return 1;
 	}
 	if (pj_ice_strans_sess_is_complete(icedemo.icest))
 		puts("negotiation complete");
@@ -626,7 +644,7 @@ int start_connecting() {
 				pj_sockaddr_print(&cand[j].addr, ipaddr, sizeof(ipaddr), 0),
 				(unsigned)pj_sockaddr_get_port(&cand[j].addr));
 
-		printf("%s\n", pj_ice_get_cand_type_name(cand[j].type), 0, 0, 0, 0, 0);
+		printf("%s\n", pj_ice_get_cand_type_name(cand[j].type));
 	}
 
 	printf("==============Enter remote info:\n");
