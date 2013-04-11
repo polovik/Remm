@@ -24,6 +24,7 @@
 #include <pjlib-util.h>
 #include <pjnath.h>
 #include "http.h"
+#include "connection.h"
 
 #define THIS_FILE   "connection.c"
 
@@ -460,11 +461,17 @@ void icedemo_destroy_instance(int signum) {
 /*
  * Create ICE session, invoked from the menu.
  */
-static void icedemo_init_session(unsigned rolechar) {
-	pj_ice_sess_role role = (
-			pj_tolower((pj_uint8_t) rolechar) == 'o' ?
-					PJ_ICE_SESS_ROLE_CONTROLLING : PJ_ICE_SESS_ROLE_CONTROLLED);
+static void icedemo_init_session(host_side_e side) {
+	pj_ice_sess_role role;
 	pj_status_t status;
+
+	if (side == SIDE_SERVER)
+		role = PJ_ICE_SESS_ROLE_CONTROLLING;
+	else if (side == SIDE_CLIENT)
+		role = PJ_ICE_SESS_ROLE_CONTROLLED;
+	else {
+		assert(0);
+	}
 
 	if (icedemo.icest == NULL) {
 		PJ_LOG(1, (THIS_FILE, "Error: No ICE instance, create it first"));
@@ -559,8 +566,13 @@ void send_data(unsigned comp_id, const char *data) {
 /*
  * And here's the main()
  */
-int start_connecting() {
+int start_connecting(host_side_e side) {
 	pj_status_t status;
+	char foundation[32], transport[12], type[32];
+	int comp_id, prio, port;
+	int id = 0;
+	unsigned j, cand_cnt;
+	char ipaddr[PJ_INET6_ADDRSTRLEN];
 
 	icedemo.opt.comp_cnt = 1;	//	Component count
 	icedemo.opt.max_host = -1;	//	max number of host candidates
@@ -581,32 +593,14 @@ int start_connecting() {
 		return 1;
 
 	sleep(2);
-	if (http_request(URL_PREPARE_CONNECTION) != 0) {
-		printf("ERROR %s() Can't clear connection information on server.\n", __FUNCTION__);
+	if (prepare_connection(side) != 0) {
 		icedemo_destroy_instance(3);
 	}
-	char *description = NULL;
-	if (!is_operation_successfull(&description)) {
-		printf("ERROR %s() Incorrect request to server: ", __FUNCTION__);
-		if (description != NULL)
-			printf("\"%s\"\n", description);
-		else
-			printf("\"\"\n");
-		icedemo_destroy_instance(3);
-	}
-	assert(description != NULL);
-	printf("INFO  %s() Operation result: \"%s\"\n", __FUNCTION__, description);
 	printf("==============icedemo_create_instance\n");
 	icedemo_create_instance();
 	sleep(2);
 	printf("==============icedemo_init_session\n");
-#ifdef CLIENT
-	icedemo_init_session('a');
-#elif SERVER
-	icedemo_init_session('o');
-#else
-	assert(0);
-#endif
+	icedemo_init_session(side);
 	sleep(2);
 	printf("==============icedemo_show_ice\n");
 
@@ -627,51 +621,55 @@ int start_connecting() {
 		return 1;
 	}
 	pj_ice_sess_cand cand[PJ_ICE_ST_MAX_CAND];
-	char ipaddr[PJ_INET6_ADDRSTRLEN];
 	/* Get default candidate for the component */
 	status = pj_ice_strans_get_def_cand(icedemo.icest, 1, &cand[0]);
 	if (status != PJ_SUCCESS)
 		return -status;
-	unsigned j, cand_cnt;
 	cand_cnt = PJ_ARRAY_SIZE(cand);
 	status = pj_ice_strans_enum_cands(icedemo.icest, 1, &cand_cnt, cand);
 	if (status != PJ_SUCCESS)
 		return -status;
-	/* And encode the candidates as SDP */
-	for (j = 0; j < cand_cnt; ++j) {
-		printf("a=candidate:%.*s %u UDP %u %s %u typ ", (int)cand[j].foundation.slen,
-				cand[j].foundation.ptr, (unsigned)cand[j].comp_id, cand[j].prio,
-				pj_sockaddr_print(&cand[j].addr, ipaddr, sizeof(ipaddr), 0),
-				(unsigned)pj_sockaddr_get_port(&cand[j].addr));
 
-		printf("%s\n", pj_ice_get_cand_type_name(cand[j].type));
-	}
+	/* And encode the candidates as SDP */
+	// a=candidate:Sc0a80a6a 1 UDP 1862270975 91.149.128.89 36645 typ srflx
+	id = 0;
+	sprintf(foundation, "%.*s", (int)cand[id].foundation.slen, cand[id].foundation.ptr);
+	comp_id = (unsigned)cand[id].comp_id;
+	prio = cand[id].prio;
+	sprintf(ipaddr, "%s", pj_sockaddr_print(&cand[id].addr, ipaddr, sizeof(ipaddr), 0));
+	port = (unsigned)pj_sockaddr_get_port(&cand[id].addr);
+	sprintf(type, "%s", pj_ice_get_cand_type_name(cand[id].type));
+/*	for (j = 0; j < cand_cnt; ++j) {
+		printf("a=candidate:%.*s %u UDP %u %s %u typ %s\n", foundation, comp_id, prio,
+				ipaddr, port, type);
+	}*/
 
 	printf("==============Enter remote info:\n");
-	/*
-v=0
-o=- 3414953978 3414953978 IN IP4 localhost
-s=ice
-t=0 0
-a=ice-ufrag:515f007c
-a=ice-pwd:5bd062c2
-m=audio 51756 RTP/AVP 0
-c=IN IP4 91.149.128.89
-a=candidate:Sc0a80a5f 1 UDP 1862270975 91.149.128.89 51756 typ srflx
-
-a=candidate:Sc0a80a6a 1 UDP 1862270975 91.149.128.89 36645 typ srflx
-a=candidate:Hc0a80a6a 1 UDP 1694498815 192.168.10.106 36645 typ host
-a=candidate:Hc0a801ec 1 UDP 1694498815 192.168.1.236 36645 typ host
-*/
-	char foundation[32], transport[12], type[32];
-	int comp_id, prio, port;
-	int cnt = fscanf(stdin, "a=candidate:%s %d %s %d %s %d typ %s", foundation,
-						&comp_id, transport, &prio, ipaddr, &port, type);
-	if (cnt != 7) {
-		PJ_LOG(1, (THIS_FILE, "error: Invalid ICE candidate line"));
-		return 1;
+	char candidate_info[100];
+	while (1) {
+		int result;
+		result = send_connection_info(side, foundation, comp_id, prio, ipaddr, port,
+									  type, candidate_info, sizeof(candidate_info));
+		if (result != 0) {
+			icedemo_destroy_instance(3);
+		}
+		int cnt = sscanf(candidate_info, "a=candidate:%s %d %s %d %s %d typ %s", foundation,
+						 &comp_id, transport, &prio, ipaddr, &port, type);
+		//	Simple check of candidate info
+		if (cnt != 7) {
+			printf("INFO  %s() ICE candidate info not full.\n", __FUNCTION__);
+			sleep(2);
+			continue;
+		}
+		if ((comp_id != 1) || (strcmp(transport, "UDP") != 0) || (strcmp(type, "srflx") != 0)) {
+			printf("ERROR %s() ICE candidate info incorrect.\n", __FUNCTION__);
+			sleep(2);
+			continue;
+		}
+		break;
 	}
 
+	printf("INFO  %s() Candidate info has successfully received. Open connection.\n", __FUNCTION__);
 	pj_ice_sess_cand *rem_cand;
 	reset_rem_info();
 	strcpy(icedemo.rem.ufrag, "515f007c");

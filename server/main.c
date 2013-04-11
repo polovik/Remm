@@ -25,7 +25,7 @@ int main(int argc, char *argv[]) {
     // Register signal and signal handler
     signal(SIGINT, icedemo_destroy_instance);
 
-    if (start_connecting() != 0)
+    if (start_connecting(SIDE_SERVER) != 0)
     	return 1;
 
 	printf("==============Main LOOP\n");

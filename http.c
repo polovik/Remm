@@ -8,6 +8,11 @@
 
 static char http_page[100000];
 
+static const char *host_name[] = {
+	"server",
+	"client"
+};
+
 static void on_complete(pj_http_req *hreq, pj_status_t status,
                         const pj_http_resp *resp)
 {
@@ -39,7 +44,7 @@ int http_request(const char *url)
     pj_pool_factory *mem;
     pj_status_t status;
 
-    printf("INFO  %s() Start request to %s.\n", __FUNCTION__, url);
+    printf("INFO  %s() Start request to %s\n", __FUNCTION__, url);
     memset(http_page, 0x00, sizeof(http_page));
     pj_caching_pool_init(&cp, NULL, 0);
     mem = &cp.factory;
@@ -118,5 +123,62 @@ int is_operation_successfull(char **result)
 		return 0;
 	}
 
+	return 0;
+}
+
+//	http://copter.ho.ua/connect.cgi?host=client&cmd=prepare
+int prepare_connection(host_side_e side)
+{
+	char url[100];
+	char *description = NULL;
+	snprintf(url, sizeof(url), "http://copter.ho.ua/connect.cgi?host=%s&cmd=prepare", host_name[side]);
+	if (http_request(url) != 0) {
+		printf("ERROR %s() Can't clear connection information on server.\n", __FUNCTION__);
+		return -1;
+	}
+	if (!is_operation_successfull(&description)) {
+		printf("ERROR %s() Incorrect request to server: ", __FUNCTION__);
+		if (description != NULL)
+			printf("\"%s\"\n", description);
+		else
+			printf("\"\"\n");
+		return -1;
+	}
+	assert(description != NULL);
+	printf("INFO  %s() Operation result: \"%s\"\n", __FUNCTION__, description);
+	return 0;
+}
+
+//	http://copter.ho.ua/connect.cgi?host=client&foundation=Sc0a80a5f&comp_id=1&prio=1862270975&ip=192.168.1.1&port=51756&type=srflx
+int send_connection_info(host_side_e side, char *foundation, unsigned int comp_id,
+							 unsigned int prio, char *ip, unsigned int port, char *type,
+							 char *candidate_info, int info_length)
+{
+	char url[200];
+	char *description = NULL, *cand = NULL;
+	snprintf(url, sizeof(url), "http://copter.ho.ua/connect.cgi?host=%s&"
+			 "foundation=%s&comp_id=%u&prio=%u&ip=%s&port=%u&type=%s",
+			 host_name[side], foundation, comp_id, prio, ip, port, type);
+	if (http_request(url) != 0) {
+		printf("ERROR %s() Can't clear connection information on server.\n", __FUNCTION__);
+		return -1;
+	}
+	if (!is_operation_successfull(&description)) {
+		printf("ERROR %s() Incorrect request to server: ", __FUNCTION__);
+		if (description != NULL)
+			printf("\"%s\"\n", description);
+		else
+			printf("\"\"\n");
+		return -1;
+	}
+	assert(description != NULL);
+	printf("INFO  %s() Operation result: \"%s\"\n", __FUNCTION__, description);
+	cand = strstr(description, host_name[side == SIDE_SERVER ? SIDE_CLIENT : SIDE_SERVER]);
+	if (cand == NULL) {
+		printf("ERROR %s() Result doesn't contain host side.\n", __FUNCTION__);
+		return -1;
+	}
+	cand = cand + strlen(host_name[side]) + 1; // e.g. skip "server:"
+	strncpy(candidate_info, cand, info_length);
 	return 0;
 }
