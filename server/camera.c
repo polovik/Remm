@@ -9,8 +9,8 @@
 #include <pthread.h>
 #include <unistd.h>
 #include <sys/time.h>
-
-#define MAX_JPEG_IMAGE_SIZE	1000000
+#include <signal.h>
+#include "camera.h"
 
 typedef struct {
 	CvCapture *capture;
@@ -88,6 +88,16 @@ void *grab_pictures(void *arg)
 	return 0;
 }
 
+int is_capture_aborted()
+{
+	return camera_ctx.thread_aborted;
+}
+
+void stop_capturing()
+{
+	camera_ctx.thread_aborted = 1;
+}
+
 int init_camera()
 {
 	double width, height;
@@ -119,30 +129,46 @@ int init_camera()
 		return -1;
 	}
 
+	printf("INFO  %s() Camera is successfully inited.\n", __FUNCTION__);
 	return 0;
 }
 
-void release_camera()
+void release_camera(int signum)
 {
-	pthread_mutex_destroy(&camera_ctx.image_copy_mutex);
-	if (camera_ctx.capture != NULL)
-		cvReleaseCapture(&camera_ctx.capture);
-}
+	printf("INFO  %s() Release resources. signum=%d\n", __FUNCTION__, signum);
+	stop_capturing();
+	if (camera_ctx.capture == NULL)
+		return;
 
+	if (pthread_join(camera_ctx.grabbing_thread, NULL) != 0) {
+		perror("Joining to grabbing_thread");
+	}
+	if (pthread_mutex_destroy(&camera_ctx.image_copy_mutex) != 0) {
+		perror("Destroying mutex image_copy_mutex");
+	}
+	if (camera_ctx.capture != NULL) {
+		cvReleaseCapture(&camera_ctx.capture);
+		camera_ctx.capture = NULL;
+	}
+	printf("INFO  %s() Resources is released.\n", __FUNCTION__);
+}
+/*
 int main(int argc, char *argv[])
 {
 	unsigned char frame[MAX_JPEG_IMAGE_SIZE];
 	int size;
 
+    signal(SIGINT, release_camera);
+
 	if (init_camera() != 0)
 		exit(0);
 
-	while(camera_ctx.thread_aborted == 0) {
+	while(is_capture_aborted() == 0) {
 		get_frame(frame, &size);
 		sleep(1);
 	}
 
-	pthread_join(camera_ctx.grabbing_thread, NULL);
-	release_camera();
+	release_camera(0);
 	exit(0);
 }
+*/

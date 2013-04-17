@@ -571,7 +571,7 @@ int start_connecting(host_side_e side) {
 	char foundation[32], transport[12], type[32];
 	int comp_id, prio, port;
 	int id = 0;
-	unsigned j, cand_cnt;
+	unsigned cand_cnt;
 	char ipaddr[PJ_INET6_ADDRSTRLEN];
 
 	icedemo.opt.comp_cnt = 1;	//	Component count
