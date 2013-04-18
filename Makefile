@@ -11,7 +11,7 @@ HOST_CFLAGS=-g -Wall $(HOST_DEFINES) -I$(HOST_PJ)/pjlib/include -I$(HOST_PJ)/pjn
 
 ARM_PJ=../pjproject-arm
 ARM_ARCH=arm-unknown-linux-gnu
-ARM_CC=arm-unknown-linux-gnueabi-gcc
+ARM_CC=arm-linux-gnueabihf-gcc
 ARM_LDFLAGS=-lpthread -ldl -L$(ARM_PJ)/pjlib/lib -L$(ARM_PJ)/pjlib-util/lib -L$(ARM_PJ)/pjnath/lib
 ARM_LIBS=-lpjnath-$(ARM_ARCH) -lpjlib-util-$(ARM_ARCH) -lpj-$(ARM_ARCH) -lm -lnsl -lrt -lpthread
 ARM_DEFINES=-DPJ_IS_BIG_ENDIAN=0 -DPJ_IS_LITTLE_ENDIAN=1
