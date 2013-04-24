@@ -25,6 +25,7 @@
 #include <pjnath.h>
 #include "http.h"
 #include "connection.h"
+#include "packet.h"
 
 #define THIS_FILE   "connection.c"
 
@@ -203,6 +204,49 @@ static int icedemo_worker_thread(void *unused) {
 	return 0;
 }
 
+/**	Check for picture inside packet.
+ *  Return 1 if picture has found. Otherwise return 0.
+ */
+#ifdef CLIENT_SIDE
+int picture_assembly(unsigned char *data, unsigned int length)
+{
+	extern void picture_rx(unsigned char *data, unsigned int length);
+	static picture_packet_s prev_packet = { .picture_id = -1 } ;
+	static unsigned char *picture;
+	picture_packet_s *packet = (picture_packet_s *)data;
+
+	if (packet->magic != MAGIC_PICTURE)
+		return 0;
+
+	if (packet->picture_id < prev_packet.picture_id) {
+		printf("INFO  %s() Received frame %d for old picture %d. Skip it.\n",
+			   __FUNCTION__, packet->picture_id, prev_packet.picture_id);
+		return 1;
+	}
+	if (packet->picture_id > prev_packet.picture_id) {
+		picture_rx(picture, prev_packet.picture_size);
+		free(picture);
+		printf("INFO  %s() Start receiving new picture %d.\n", __FUNCTION__, packet->picture_id);
+		prev_packet = *packet;
+		picture = malloc(packet->picture_size);
+	}
+	unsigned int dest_pos = packet->fragment_id * FRAGMENT_SIZE;
+	if ((dest_pos + packet->fragment_size) > packet->picture_size) {
+		printf("ERROR %s() Incorrect packet - May occur \"Out of memory\"."
+			   "Allocated memory size = %dbytes, request %dbytes. fragment_id=%d, fragment_size=%d.\n",
+			   __FUNCTION__, packet->picture_size, dest_pos + packet->fragment_size, packet->fragment_id, packet->fragment_size);
+		return 1;
+	}
+	memcpy(&picture[dest_pos], packet->data, packet->fragment_size);
+	return 1;
+}
+#else
+int picture_assembly(unsigned char *data, unsigned int length)
+{
+	return 0;
+}
+#endif
+
 /*
  * This is the callback that is registered to the ICE stream transport to
  * receive notification about incoming data. By "data" it means application
@@ -211,19 +255,17 @@ static int icedemo_worker_thread(void *unused) {
  */
 static void cb_on_rx_data(pj_ice_strans *ice_st, unsigned comp_id, void *pkt,
 		pj_size_t size, const pj_sockaddr_t *src_addr, unsigned src_addr_len) {
-	extern void data_rx(char *data, unsigned int length);
-	char ipstr[PJ_INET6_ADDRSTRLEN + 10];
+	extern void data_rx(unsigned char *data, unsigned int length);
 
 	PJ_UNUSED_ARG(ice_st);
+	PJ_UNUSED_ARG(comp_id);
+	PJ_UNUSED_ARG(src_addr);
 	PJ_UNUSED_ARG(src_addr_len);
-	PJ_UNUSED_ARG(pkt);
 
-	// Don't do this! It will ruin the packet buffer in case TCP is used!
-	//((char*)pkt)[size] = '\0';
+	if (picture_assembly((unsigned char *)pkt, (unsigned int)size) == 1)
+		return;
 
-	PJ_LOG(3, (THIS_FILE, "Component %d: received %d bytes data from %s",
-			   comp_id, size, pj_sockaddr_print(src_addr, ipstr, sizeof(ipstr), 3)));
-	data_rx((char*) pkt, (unsigned) size);
+	data_rx((unsigned char*) pkt, (unsigned int) size);
 }
 
 /*
@@ -529,7 +571,8 @@ static void icedemo_start_nego(void) {
 /*
  * Send application data to remote agent.
  */
-void send_data(unsigned comp_id, const char *data) {
+void send_data(unsigned comp_id, const unsigned char *data, unsigned int length)
+{
 	pj_status_t status;
 
 	if (icedemo.icest == NULL) {
@@ -554,13 +597,50 @@ void send_data(unsigned comp_id, const char *data) {
 		return;
 	}
 
-	status = pj_ice_strans_sendto(icedemo.icest, comp_id, data, strlen(data),
+	status = pj_ice_strans_sendto(icedemo.icest, comp_id, data, length,
 								  &icedemo.rem.def_addr[comp_id - 1],
 								  pj_sockaddr_get_len(&icedemo.rem.def_addr[comp_id - 1]));
 	if (status != PJ_SUCCESS)
 		icedemo_perror("Error sending data", status);
-	else
-		PJ_LOG(3, (THIS_FILE, "Data sent"));
+}
+
+void send_picture(unsigned char *picture, unsigned int length)
+{
+	static unsigned int picture_id = 0;
+	unsigned int i = 0;
+	unsigned int fragments_count;
+	unsigned int last_fragment_size;
+	picture_packet_s packet;
+
+	printf("INFO  %s() Send picture. Size = %d.\n", __FUNCTION__, length);
+//	printf("%d - %d - %d\n", sizeof(picture_packet_s), sizeof(raw_packet), sizeof(char *));
+
+	memset(&packet, 0x00, sizeof(picture_packet_s));
+	packet.magic = MAGIC_PICTURE;
+	packet.picture_id = picture_id;
+	packet.picture_size = length;
+	fragments_count = length / FRAGMENT_SIZE;
+
+	for (i = 0; i < fragments_count; i++) {
+		packet.fragment_id = i;
+		packet.fragment_size = FRAGMENT_SIZE;
+		memcpy(packet.data, &picture[i * FRAGMENT_SIZE], FRAGMENT_SIZE);
+
+		send_data(1, (unsigned char *)&packet, sizeof(picture_packet_s));
+	}
+
+	last_fragment_size = length - fragments_count * FRAGMENT_SIZE;
+//	printf("%d - %d - %d\n", length, fragments_count, last_fragment_size);
+	if (last_fragment_size != 0) {
+		packet.fragment_id = i;
+		packet.fragment_size = last_fragment_size;
+		memcpy(packet.data, &picture[i * FRAGMENT_SIZE], last_fragment_size);
+
+		send_data(1, (unsigned char *)&packet, sizeof(picture_packet_s));
+	}
+
+	printf("INFO  %s() Picture %d has sent.\n", __FUNCTION__, picture_id);
+	picture_id++;
 }
 
 /*

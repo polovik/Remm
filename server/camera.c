@@ -35,11 +35,6 @@ void get_frame(unsigned char frame[MAX_JPEG_IMAGE_SIZE], int *size)
 	}
 	memcpy(frame, camera_ctx.jpeg_image, *size);
 	pthread_mutex_unlock(&camera_ctx.image_copy_mutex);
-
-	char filename[] = "image.jpg";
-	FILE *file = fopen(filename, "wb");
-	fwrite(frame, 1, *size, file);
-	fclose(file);
 }
 
 void *grab_pictures(void *arg)
@@ -62,7 +57,7 @@ void *grab_pictures(void *arg)
 		}
 		gettimeofday(&tv, NULL);
 		elapsed = tv.tv_sec * 1000000 + tv.tv_usec - elapsed;
-		printf("INFO  %s() Captured %d. Elapsed %lld us.\n", __FUNCTION__, counter, elapsed);
+//		printf("INFO  %s() Captured %d. Elapsed %lld us.\n", __FUNCTION__, counter, elapsed);
 
 		encodedMat = cvEncodeImage(".jpeg", frame, jpeg_params);
 		if (encodedMat == NULL) {
@@ -104,14 +99,15 @@ int init_camera()
 	int ret;
 
 	memset(&camera_ctx, 0x00, sizeof(camera_ctx));
+	camera_ctx.thread_aborted = 0;
 	camera_ctx.capture = cvCreateCameraCapture(CV_CAP_ANY); //cvCaptureFromCAM( 0 );
 	if (camera_ctx.capture == NULL) {
 		printf("ERROR %s() Can't open camera.\n", __FUNCTION__);
 		return -1;
 	}
 
-	cvSetCaptureProperty(camera_ctx.capture, CV_CAP_PROP_FRAME_WIDTH, 1280);	//	640x480, 320x240, 160x120
-	cvSetCaptureProperty(camera_ctx.capture, CV_CAP_PROP_FRAME_HEIGHT, 960);
+	cvSetCaptureProperty(camera_ctx.capture, CV_CAP_PROP_FRAME_WIDTH, 320);	//	640x480, 320x240, 160x120
+	cvSetCaptureProperty(camera_ctx.capture, CV_CAP_PROP_FRAME_HEIGHT, 240);
 //	cvSetCaptureProperty(capture, CV_CAP_PROP_FPS, 30);
 
 	width = cvGetCaptureProperty(camera_ctx.capture, CV_CAP_PROP_FRAME_WIDTH);

@@ -19,3 +19,4 @@
 # Eclipse
 .cproject
 .project
+.settings/

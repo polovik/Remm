@@ -12,7 +12,7 @@ typedef enum {
 
 void icedemo_destroy_instance(int signum);
 int start_connecting(host_side_e side);
-void send_data(unsigned comp_id, const char *data);
-
+void send_data(unsigned comp_id, const unsigned char *data, unsigned int length);
+void send_picture(unsigned char *picture, unsigned int length);
 
 #endif /* CONNECTION_H_ */

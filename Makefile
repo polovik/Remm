@@ -6,8 +6,8 @@ HOST_ARCH=i686-pc-linux-gnu
 HOST_CC=gcc
 HOST_LDFLAGS=-lpthread -ldl -L$(HOST_PJ)/pjlib/lib -L$(HOST_PJ)/pjlib-util/lib -L$(HOST_PJ)/pjnath/lib
 HOST_LIBS=-lpjnath-$(HOST_ARCH) -lpjlib-util-$(HOST_ARCH) -lpj-$(HOST_ARCH) -lm -lnsl -lrt -lpthread
-HOST_DEFINES=
-HOST_CFLAGS=-g -Wall $(HOST_DEFINES) -I$(HOST_PJ)/pjlib/include -I$(HOST_PJ)/pjnath/include -I$(HOST_PJ)/pjlib-util/include
+HOST_DEFINES=-DCLIENT_SIDE=1
+HOST_CFLAGS=-g -Werror -Wall $(HOST_DEFINES) -I$(HOST_PJ)/pjlib/include -I$(HOST_PJ)/pjnath/include -I$(HOST_PJ)/pjlib-util/include
 
 ARM_PJ=../pjproject-arm
 ARM_ARCH=arm-unknown-linux-gnu
