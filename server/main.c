@@ -9,6 +9,7 @@
 #include "../connection.h"
 #include "../packet.h"
 #include "camera.h"
+#include "gpio.h"
 
 typedef struct {
 	int connection_established;
@@ -26,7 +27,7 @@ static server_ctx_s server_ctx;
 
 void start_communicate()
 {
-	printf("==============Connection established\n");
+	printf("INFO  %s() Connection established\n", __FUNCTION__);
 	server_ctx.connection_established = 1;
 }
 
@@ -56,6 +57,7 @@ void destroy_connection(int signum)
 	printf("INFO  %s() Destroy connection. signum=%d\n", __FUNCTION__, signum);
 	release_camera(signum);
 	icedemo_destroy_instance(signum);
+	release_leds(signum);
 }
 
 int main(int argc, char *argv[])
@@ -70,13 +72,16 @@ int main(int argc, char *argv[])
     // Register signal and signal handler
     signal(SIGINT, destroy_connection);
 
+    if (init_gpio() != 0)
+    	return 1;
+
 	if (init_camera() != 0)
 		return 1;
 
     if (start_connecting(SIDE_SERVER) != 0)
     	return 1;
 
-	printf("==============Main LOOP\n");
+    printf("INFO  %s() Enter in Main LOOP\n", __FUNCTION__);
 	while (1) {
 		if (server_ctx.connection_established == 1) {
 			memset(status_packet.info, 0x00, sizeof(status_packet.info));
@@ -99,7 +104,7 @@ int main(int argc, char *argv[])
 		}
 		sleep(1);
 	}
-	printf("==============Exit from Main LOOP\n");
+    printf("INFO  %s() Exit from Main LOOP\n", __FUNCTION__);
 
 	destroy_connection(0);
 

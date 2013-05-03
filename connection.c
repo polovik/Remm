@@ -26,6 +26,11 @@
 #include "http.h"
 #include "connection.h"
 #include "packet.h"
+#ifdef CLIENT_SIDE
+	#define set_rgb_led_mode(x)
+#else
+	#include "server/gpio.h"
+#endif
 
 #define THIS_FILE   "connection.c"
 
@@ -262,6 +267,7 @@ static void cb_on_rx_data(pj_ice_strans *ice_st, unsigned comp_id, void *pkt,
 	PJ_UNUSED_ARG(src_addr);
 	PJ_UNUSED_ARG(src_addr_len);
 
+	set_rgb_led_mode(RGB_GREEN_SINGLE_SHOT);
 	if (picture_assembly((unsigned char *)pkt, (unsigned int)size) == 1)
 		return;
 
@@ -281,8 +287,10 @@ static void cb_on_ice_complete(pj_ice_strans *ice_st, pj_ice_strans_op op,
 
 	if (status == PJ_SUCCESS) {
 		PJ_LOG(3, (THIS_FILE, "ICE %s successful", opname));
-		if (op == PJ_ICE_STRANS_OP_NEGOTIATION)
+		if (op == PJ_ICE_STRANS_OP_NEGOTIATION) {
+			set_rgb_led_mode(RGB_GREEN);
 			start_communicate();
+		}
 	} else {
 		char errmsg[PJ_ERR_MSG_SIZE];
 
@@ -666,6 +674,7 @@ int start_connecting(host_side_e side) {
 //	icedemo.opt.regular
 //	icedemo.opt.log_file
 
+	set_rgb_led_mode(RGB_RED_BLINKING);
 	pj_log_set_level(5);
     printf("==============icedemo_init\n");
 	status = icedemo_init();
@@ -676,6 +685,7 @@ int start_connecting(host_side_e side) {
 	if (prepare_connection(side) != 0) {
 		icedemo_destroy_instance(3);
 	}
+	set_rgb_led_mode(RGB_RED);
 	printf("==============icedemo_create_instance\n");
 	icedemo_create_instance();
 	sleep(2);
@@ -724,6 +734,7 @@ int start_connecting(host_side_e side) {
 				ipaddr, port, type);
 	}*/
 
+	set_rgb_led_mode(RGB_BLUE_BLINKING);
 	printf("==============Enter remote info:\n");
 	char candidate_info[100];
 	while (1) {
@@ -749,6 +760,7 @@ int start_connecting(host_side_e side) {
 		break;
 	}
 
+	set_rgb_led_mode(RGB_BLUE);
 	printf("INFO  %s() Candidate info has successfully received. Open connection.\n", __FUNCTION__);
 	pj_ice_sess_cand *rem_cand;
 	reset_rem_info();
