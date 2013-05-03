@@ -7,12 +7,14 @@
 #include <signal.h>
 #include "../connection.h"
 #include "../packet.h"
+#include "control.h"
+#include "display.h"
 
 static int connection_established = 0;
 
 void start_communicate()
 {
-	printf("==============Connection established\n");
+	printf("INFO  %s() Connection is established.\n", __FUNCTION__);
 	connection_established = 1;
 }
 
@@ -43,35 +45,43 @@ void picture_rx(unsigned char *data, unsigned int length)
 	FILE *file = fopen(filename, "wb");
 	fwrite(data, 1, length, file);
 	fclose(file);
+	display_frame(data, length);
+}
+
+void destroy_connection(int signum)
+{
+	printf("INFO  %s() Destroy connection. signum=%d\n", __FUNCTION__, signum);
+	release_display();
+	icedemo_destroy_instance(signum);
 }
 
 int main(int argc, char *argv[])
 {
-	control_packet_s control_packet;
-	control_packet.magic = MAGIC_COMMAND;
-
     // Register signal and signal handler
-    signal(SIGINT, icedemo_destroy_instance);
+    signal(SIGINT, destroy_connection);
+
+    if (init_display() != 0)
+    	goto __DESTROY_APP__;
+
+    init_controls();
 
     if (start_connecting(SIDE_CLIENT) != 0)
-    	return 1;
+    	goto __DESTROY_APP__;
 
-	printf("==============Main LOOP\n");
+	printf("INFO  %s() Enter in Main LOOP.\n", __FUNCTION__);
 	while (1) {
 		if (connection_established == 1) {
-			control_packet.height = 0;
-			control_packet.direction = 0;
-			control_packet.gps_latitude = 16.22;
-			control_packet.gps_longitude = 15.44;
-			control_packet.slope = 0;
-			control_packet.command = AUTOPILOT_OFF;
-			send_data(1, (unsigned char *)&control_packet, sizeof(control_packet_s));
+			//	Poll every 100ms
+			poll_keys(100);
+			send_command();
+		} else {
+			sleep(1);
 		}
-		sleep(1);
 	}
-	printf("==============Exit from Main LOOP\n");
+	printf("INFO  %s() Exit from Main LOOP.\n", __FUNCTION__);
 
-	icedemo_destroy_instance(0);
+__DESTROY_APP__:
+	destroy_connection(0);
 
 	return 0;
 }
