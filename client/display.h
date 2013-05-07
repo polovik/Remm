@@ -7,7 +7,7 @@
 #define DISPLAY_WINDOW_NAME "Remm_control"
 
 int init_display();
-void display_frame(unsigned char *data, unsigned int length);
+void display_frame();
 void release_display();
 
 #endif /* DISPLAY_H_ */

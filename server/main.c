@@ -58,6 +58,7 @@ void destroy_connection(int signum)
 	release_camera(signum);
 	icedemo_destroy_instance(signum);
 	release_leds(signum);
+	exit(0);
 }
 
 int main(int argc, char *argv[])

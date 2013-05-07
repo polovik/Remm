@@ -477,12 +477,12 @@ void icedemo_destroy_instance(int signum) {
 
 	if (icedemo.icest == NULL) {
 		PJ_LOG(1, (THIS_FILE, "Error: No ICE instance, create it first"));
-		exit(0);
+		return;
 	}
 
 	if (!pj_ice_strans_has_sess(icedemo.icest)) {
 		PJ_LOG(1, (THIS_FILE, "Error: No ICE session, initialize first"));
-		exit(0);
+		return;
 	}
 
 	status = pj_ice_strans_stop_ice(icedemo.icest);
@@ -495,7 +495,7 @@ void icedemo_destroy_instance(int signum) {
 
 	if (icedemo.icest == NULL) {
 		PJ_LOG(1, (THIS_FILE, "Error: No ICE instance, create it first"));
-		exit(0);
+		return;
 	}
 
 	pj_ice_strans_destroy(icedemo.icest);
@@ -504,8 +504,6 @@ void icedemo_destroy_instance(int signum) {
 	reset_rem_info();
 
 	PJ_LOG(3, (THIS_FILE, "ICE instance destroyed"));
-
-	exit(0);
 }
 
 /*

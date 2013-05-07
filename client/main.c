@@ -38,21 +38,12 @@ void data_rx(unsigned char *data, unsigned int length)
 			status_packet->gps_longitude, status_packet->slope, status_packet->battery_charge, status_packet->info);
 }
 
-void picture_rx(unsigned char *data, unsigned int length)
-{
-	printf("INFO  %s() Picture has just received.\n", __FUNCTION__);
-	char filename[] = "captured.jpg";
-	FILE *file = fopen(filename, "wb");
-	fwrite(data, 1, length, file);
-	fclose(file);
-	display_frame(data, length);
-}
-
 void destroy_connection(int signum)
 {
 	printf("INFO  %s() Destroy connection. signum=%d\n", __FUNCTION__, signum);
 	release_display();
 	icedemo_destroy_instance(signum);
+	exit(0);
 }
 
 int main(int argc, char *argv[])
@@ -71,6 +62,7 @@ int main(int argc, char *argv[])
 	printf("INFO  %s() Enter in Main LOOP.\n", __FUNCTION__);
 	while (1) {
 		if (connection_established == 1) {
+			display_frame();
 			//	Poll every 100ms
 			poll_keys(100);
 			send_command();

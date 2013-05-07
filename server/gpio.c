@@ -29,7 +29,7 @@ void add_timer(unsigned int msec)
 	timerclear(&expiry_time);
 	timeout.tv_sec = msec / 1000;
 	timeout.tv_usec = (msec % 1000) * 1000;
-	printf("INFO  %s() Add timer %d:%d.\n", __FUNCTION__, (int)timeout.tv_sec, (int)timeout.tv_usec);
+//	printf("INFO  %s() Add timer %d:%d.\n", __FUNCTION__, (int)timeout.tv_sec, (int)timeout.tv_usec);
 	timeradd(&cur_time, &timeout, &expiry_time);
 }
 
@@ -48,7 +48,7 @@ int is_timer_expired()
 		return 0;
 
 	timerclear(&expiry_time);
-	printf("INFO  %s() Timer has expired.\n", __FUNCTION__);
+//	printf("INFO  %s() Timer has expired.\n", __FUNCTION__);
 	return 1;
 }
 
@@ -111,7 +111,7 @@ void *rgb_control(void *arg)
 				digitalWrite(RGB_G_GPIO, HIGH);
 				digitalWrite(RGB_B_GPIO, HIGH);
 				led_turned_on = 0;
-				add_timer(50);
+				add_timer(20);
 				break;
 			default:
 				assert(0);
@@ -140,12 +140,12 @@ void *rgb_control(void *arg)
 			} else if (prev_rgb_mode == RGB_GREEN_SINGLE_SHOT) {
 				if (led_turned_on == 0) {
 					digitalWrite(RGB_R_GPIO, HIGH);
-					digitalWrite(RGB_G_GPIO, HIGH);
-					digitalWrite(RGB_B_GPIO, LOW);
+					digitalWrite(RGB_G_GPIO, LOW);
+					digitalWrite(RGB_B_GPIO, HIGH);
 					led_turned_on = 1;
-					add_timer(50);
+					add_timer(20);
 				} else {
-					prev_rgb_mode = RGB_GREEN;
+					rgb_mode = RGB_GREEN;
 				}
 			}
 		}
