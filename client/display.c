@@ -12,6 +12,8 @@ static unsigned char *picture_data;
 static unsigned int picture_length;
 static pthread_mutex_t display_mutex;
 
+void display_fps(IplImage *image, float fps);
+
 int init_display()
 {
 	picture_data = NULL;
@@ -58,7 +60,21 @@ void picture_rx(unsigned char *data, unsigned int length)
 	pthread_mutex_unlock(&display_mutex);
 }
 
-void display_frame()
+void display_fps(IplImage *image, float fps)
+{
+	CvPoint point;
+	point.x = 10;
+	point.y = 20;
+	CvFont font;
+	cvInitFont(&font, CV_FONT_HERSHEY_SIMPLEX, 0.5, 0.5, 0, 1, 8);
+	cvPutText(image, "FPS: ", point, &font, CV_RGB(250,0,0));
+	point.x += 40;
+	char text[10];
+	sprintf(text, "%.1f", fps);
+	cvPutText(image, text, point, &font, CV_RGB(250,0,0));
+}
+
+void display_frame(float fps)
 {
 	IplImage *image;
 	CvMat encodedMat;
@@ -77,6 +93,7 @@ void display_frame()
 		return;
 	}
 
+	display_fps(image, fps);
 	cvShowImage(DISPLAY_WINDOW_NAME, image);
 	cvReleaseImage(&image);
 

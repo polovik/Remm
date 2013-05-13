@@ -7,6 +7,7 @@
 #include <sys/time.h>
 #include "gpio.h"
 #include "wiringPi.h"
+#include "../utils.h"
 
 //	BUTTON_CONNECT connected to P5-04 pin (GPIO 29).
 #define BUTTON_GPIO	29
@@ -20,37 +21,6 @@ static pthread_t leds_thread;
 static int exit_thread = 0;
 static struct timeval expiry_time;
 static int led_turned_on;
-
-void add_timer(unsigned int msec)
-{
-	struct timeval cur_time, timeout;
-	gettimeofday(&cur_time, 0);
-
-	timerclear(&expiry_time);
-	timeout.tv_sec = msec / 1000;
-	timeout.tv_usec = (msec % 1000) * 1000;
-//	printf("INFO  %s() Add timer %d:%d.\n", __FUNCTION__, (int)timeout.tv_sec, (int)timeout.tv_usec);
-	timeradd(&cur_time, &timeout, &expiry_time);
-}
-
-/**	Return 1 only if timer was set and it is expired.
- */
-int is_timer_expired()
-{
-	struct timeval cur_time;
-
-	if (!timerisset(&expiry_time))
-		return 0;
-
-	gettimeofday(&cur_time, 0);
-
-	if (timercmp(&cur_time, &expiry_time, <))
-		return 0;
-
-	timerclear(&expiry_time);
-//	printf("INFO  %s() Timer has expired.\n", __FUNCTION__);
-	return 1;
-}
 
 void *rgb_control(void *arg)
 {
@@ -77,7 +47,7 @@ void *rgb_control(void *arg)
 				digitalWrite(RGB_R_GPIO, LOW);
 				digitalWrite(RGB_G_GPIO, HIGH);
 				digitalWrite(RGB_B_GPIO, HIGH);
-				add_timer(500);
+				add_timer(500, &expiry_time);
 				led_turned_on = 1;
 				break;
 			case RGB_BLUE:
@@ -91,7 +61,7 @@ void *rgb_control(void *arg)
 				digitalWrite(RGB_G_GPIO, HIGH);
 				digitalWrite(RGB_B_GPIO, LOW);
 				led_turned_on = 1;
-				add_timer(500);
+				add_timer(500, &expiry_time);
 				break;
 			case RGB_GREEN:
 				digitalWrite(RGB_R_GPIO, HIGH);
@@ -104,46 +74,46 @@ void *rgb_control(void *arg)
 				digitalWrite(RGB_G_GPIO, LOW);
 				digitalWrite(RGB_B_GPIO, HIGH);
 				led_turned_on = 1;
-				add_timer(500);
+				add_timer(500, &expiry_time);
 				break;
 			case RGB_GREEN_SINGLE_SHOT:
 				digitalWrite(RGB_R_GPIO, HIGH);
 				digitalWrite(RGB_G_GPIO, HIGH);
 				digitalWrite(RGB_B_GPIO, HIGH);
 				led_turned_on = 0;
-				add_timer(20);
+				add_timer(20, &expiry_time);
 				break;
 			default:
 				assert(0);
 				break;
 			}
 		}
-		if (is_timer_expired() == 1) {
+		if (is_timer_expired(&expiry_time) == 1) {
 			if (prev_rgb_mode == RGB_RED_BLINKING) {
 				digitalWrite(RGB_R_GPIO, led_turned_on ? HIGH : LOW);
 				led_turned_on = !led_turned_on;
 				digitalWrite(RGB_G_GPIO, HIGH);
 				digitalWrite(RGB_B_GPIO, HIGH);
-				add_timer(500);
+				add_timer(500, &expiry_time);
 			} else if (prev_rgb_mode == RGB_BLUE_BLINKING) {
 				digitalWrite(RGB_R_GPIO, HIGH);
 				digitalWrite(RGB_G_GPIO, HIGH);
 				digitalWrite(RGB_B_GPIO, led_turned_on ? HIGH : LOW);
 				led_turned_on = !led_turned_on;
-				add_timer(500);
+				add_timer(500, &expiry_time);
 			} else if (prev_rgb_mode == RGB_GREEN_BLINKING) {
 				digitalWrite(RGB_R_GPIO, HIGH);
 				digitalWrite(RGB_G_GPIO, led_turned_on ? HIGH : LOW);
 				led_turned_on = !led_turned_on;
 				digitalWrite(RGB_B_GPIO, HIGH);
-				add_timer(500);
+				add_timer(500, &expiry_time);
 			} else if (prev_rgb_mode == RGB_GREEN_SINGLE_SHOT) {
 				if (led_turned_on == 0) {
 					digitalWrite(RGB_R_GPIO, HIGH);
 					digitalWrite(RGB_G_GPIO, LOW);
 					digitalWrite(RGB_B_GPIO, HIGH);
 					led_turned_on = 1;
-					add_timer(20);
+					add_timer(20, &expiry_time);
 				} else {
 					rgb_mode = RGB_GREEN;
 				}

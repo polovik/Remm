@@ -33,6 +33,7 @@ void init_controls()
 	memset(&control_packet, 0x00, sizeof(control_packet_s));
 	control_packet.magic = MAGIC_COMMAND;
 	control_packet.command = AUTOPILOT_OFF;
+	control_packet.capture_fps = 2.;
 
 	cvSetMouseCallback(DISPLAY_WINDOW_NAME, on_mouse, NULL);
 }
@@ -47,15 +48,47 @@ void poll_keys(int delay)
 		return;
 
 	printf("INFO  %s() Key %c(0x%02X) has been pressed.\n", __FUNCTION__, key, key);
+
+	if (key == '+') {
+		float fps = control_packet.capture_fps;
+		if (fps < 2)
+			fps += 0.1;
+		else {
+			fps += 1;
+			if (fps > 10)
+				fps = 10;
+		}
+		control_packet.capture_fps = fps;
+	} else if (key == '-') {
+		float fps = control_packet.capture_fps;
+		if (fps < 3) {
+			fps -= 0.1;
+			if (fps < 0)
+				fps = 0;
+		} else {
+			fps -= 1;
+		}
+		control_packet.capture_fps = fps;
+	} else {
+		//	Skip unmapped key
+		return;
+	}
+
+	send_command();
 }
 
 void send_command()
 {
-	control_packet.height = 0;
+	//control_packet.height = 0;
 	control_packet.direction = 0;
 	control_packet.gps_latitude = 16.22;
 	control_packet.gps_longitude = 15.44;
 	control_packet.slope = 0;
 	control_packet.command = AUTOPILOT_OFF;
 	send_data(1, (unsigned char *)&control_packet, sizeof(control_packet_s));
+}
+
+float get_fps()
+{
+	return control_packet.capture_fps;
 }

@@ -59,6 +59,7 @@ typedef struct {
 	float gps_latitude;
 	float gps_longitude;
 	int slope;
+	float capture_fps;	/**<	0(turn off camera), [0.1 to 2] step=0.1, (2 to 10] step=1 */
 	autopilot_command_e command;
 } control_packet_s;
 

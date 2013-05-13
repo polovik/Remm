@@ -48,6 +48,8 @@ void *grab_pictures(void *arg)
 
 	printf("INFO  %s() Start capturing.\n", __FUNCTION__);
 	while (camera_ctx.thread_aborted == 0) {
+		cvWaitKey(100);
+
 		gettimeofday(&tv, NULL);
 		elapsed = tv.tv_sec * 1000000 + tv.tv_usec;
 		frame = cvQueryFrame(camera_ctx.capture);
@@ -99,7 +101,7 @@ int init_camera()
 	int ret;
 
 	memset(&camera_ctx, 0x00, sizeof(camera_ctx));
-	camera_ctx.thread_aborted = 0;
+	camera_ctx.thread_aborted = 1;
 	camera_ctx.capture = cvCreateCameraCapture(CV_CAP_ANY); //cvCaptureFromCAM( 0 );
 	if (camera_ctx.capture == NULL) {
 		printf("ERROR %s() Can't open camera.\n", __FUNCTION__);
@@ -126,6 +128,7 @@ int init_camera()
 	}
 
 	printf("INFO  %s() Camera is successfully inited.\n", __FUNCTION__);
+	camera_ctx.thread_aborted = 0;
 	return 0;
 }
 

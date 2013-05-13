@@ -21,23 +21,27 @@ all:
 	echo ***ARM***
 	$(ARM_CC) http.c -c -o $(SERVER)/http.o $(ARM_CFLAGS)
 	$(ARM_CC) connection.c -c -o $(SERVER)/connection.o $(ARM_CFLAGS)
+	$(ARM_CC) utils.c -c -o $(SERVER)/utils.o $(ARM_CFLAGS)
 	$(ARM_CC) $(SERVER)/camera.c -c -o $(SERVER)/camera.o $(ARM_CFLAGS)
 	$(ARM_CC) $(SERVER)/gpio.c -c -o $(SERVER)/gpio.o $(ARM_CFLAGS)
 	$(ARM_CC) $(SERVER)/main.c -c -o $(SERVER)/main.o $(ARM_CFLAGS)
-	$(ARM_CC) $(SERVER)/http.o $(SERVER)/connection.o $(SERVER)/camera.o $(SERVER)/gpio.o $(SERVER)/main.o -o $(SERVER)/$(SERVER) $(ARM_LDFLAGS) $(ARM_LIBS)
+	$(ARM_CC) $(SERVER)/http.o $(SERVER)/connection.o $(SERVER)/utils.o $(SERVER)/camera.o $(SERVER)/gpio.o $(SERVER)/main.o -o $(SERVER)/$(SERVER) $(ARM_LDFLAGS) $(ARM_LIBS)
 	echo ***HOST***
 	$(HOST_CC) http.c -c -o $(CLIENT)/http.o $(HOST_CFLAGS)
 	$(HOST_CC) connection.c -c -o $(CLIENT)/connection.o $(HOST_CFLAGS)
+	$(HOST_CC) utils.c -c -o $(CLIENT)/utils.o $(HOST_CFLAGS)
 	$(HOST_CC) $(CLIENT)/control.c -c -o $(CLIENT)/control.o $(HOST_CFLAGS)
 	$(HOST_CC) $(CLIENT)/display.c -c -o $(CLIENT)/display.o $(HOST_CFLAGS)
 	$(HOST_CC) $(CLIENT)/main.c -c -o $(CLIENT)/main.o $(HOST_CFLAGS)
-	$(HOST_CC) $(CLIENT)/http.o $(CLIENT)/connection.o $(CLIENT)/control.o $(CLIENT)/display.o $(CLIENT)/main.o -o $(CLIENT)/$(CLIENT) $(HOST_LDFLAGS) $(HOST_LIBS)
+	$(HOST_CC) $(CLIENT)/http.o $(CLIENT)/connection.o $(CLIENT)/utils.o $(CLIENT)/control.o $(CLIENT)/display.o $(CLIENT)/main.o -o $(CLIENT)/$(CLIENT) $(HOST_LDFLAGS) $(HOST_LIBS)
 
 clean:
 	rm -f $(SERVER)/http.o
 	rm -f $(CLIENT)/http.o
 	rm -f $(SERVER)/connection.o
 	rm -f $(CLIENT)/connection.o
+	rm -f $(SERVER)/utils.o
+	rm -f $(CLIENT)/utils.o
 	rm -f $(SERVER)/camera.o
 	rm -f $(SERVER)/gpio.o
 	rm -f $(SERVER)/main.o

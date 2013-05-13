@@ -62,7 +62,7 @@ int main(int argc, char *argv[])
 	printf("INFO  %s() Enter in Main LOOP.\n", __FUNCTION__);
 	while (1) {
 		if (connection_established == 1) {
-			display_frame();
+			display_frame(get_fps());
 			//	Poll every 100ms
 			poll_keys(100);
 			send_command();
