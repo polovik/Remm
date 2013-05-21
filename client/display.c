@@ -29,6 +29,7 @@ int init_display()
 	}
 
 	IplImage *image = cvLoadImage("background.jpg", CV_LOAD_IMAGE_COLOR);
+	display_fps(image, 0.5);
 	cvShowImage(DISPLAY_WINDOW_NAME, image);
 	cvReleaseImage(&image);
 
@@ -46,11 +47,11 @@ void picture_rx(unsigned char *data, unsigned int length)
 		return;
 	}
 
-	char filename[] = "captured.jpg";
+/*	char filename[] = "captured.jpg";
 	FILE *file = fopen(filename, "wb");
 	fwrite(data, 1, length, file);
 	fclose(file);
-
+*/
 	pthread_mutex_lock(&display_mutex);
 	picture_length = length;
 	if (picture_data != NULL)

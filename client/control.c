@@ -33,7 +33,7 @@ void init_controls()
 	memset(&control_packet, 0x00, sizeof(control_packet_s));
 	control_packet.magic = MAGIC_COMMAND;
 	control_packet.command = AUTOPILOT_OFF;
-	control_packet.capture_fps = 2.;
+	control_packet.capture_fps = 0.5;
 
 	cvSetMouseCallback(DISPLAY_WINDOW_NAME, on_mouse, NULL);
 }
