@@ -32,6 +32,11 @@ echo "1" > /sys/class/gpio/gpio28/value
 echo "1" > /sys/class/gpio/gpio30/value
 echo "1" > /sys/class/gpio/gpio31/value
 
+echo "28" > /sys/class/gpio/unexport
+echo "30" > /sys/class/gpio/unexport
+echo "31" > /sys/class/gpio/unexport
+
+
 echo "29" > /sys/class/gpio/export
 echo "in" > /sys/class/gpio/gpio29/direction
 
@@ -46,7 +51,4 @@ do
 	sleep 1
 done
 
-echo "28" > /sys/class/gpio/unexport
 echo "29" > /sys/class/gpio/unexport
-echo "30" > /sys/class/gpio/unexport
-echo "31" > /sys/class/gpio/unexport

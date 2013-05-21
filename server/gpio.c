@@ -2,6 +2,7 @@
  * gpio.c
  */
 #include <stdio.h>
+#include <stdlib.h>
 #include <assert.h>
 #include <pthread.h>
 #include <sys/time.h>
@@ -131,6 +132,36 @@ void *rgb_control(void *arg)
 	return 0;
 }
 
+int set_gpio_mode(int gpio, int mode)
+{
+	char cmd[200];
+
+	snprintf(cmd, sizeof(cmd), "echo %d > /sys/class/gpio/export", gpio);
+	if (system(cmd) != 0) {
+		printf("ERROR %s() Can't export GPIO %d.\n", __FUNCTION__, gpio);
+		return -1;
+	}
+
+	snprintf(cmd, sizeof(cmd), "echo %s > /sys/class/gpio/gpio%d/direction",
+			  mode == OUTPUT ? "out" : "in", gpio);
+	if (system(cmd) != 0) {
+		printf("ERROR %s() Can't set direction GPIO %d.\n", __FUNCTION__, gpio);
+		return -1;
+	}
+
+	return 0;
+}
+
+void close_gpio(int gpio)
+{
+	char cmd[200];
+
+	snprintf(cmd, sizeof(cmd), "echo %d > /sys/class/gpio/unexport", gpio);
+	if (system(cmd) != 0) {
+		printf("ERROR %s() Finish access to GPIO %d.\n", __FUNCTION__, gpio);
+	}
+}
+
 void release_leds(int signum)
 {
 	printf("INFO  %s() Release resources. signum=%d\n", __FUNCTION__, signum);
@@ -138,6 +169,9 @@ void release_leds(int signum)
 	if (pthread_join(leds_thread, NULL) != 0) {
 		perror("Joining to leds_thread");
 	}
+	close_gpio(RGB_R_GPIO);
+	close_gpio(RGB_G_GPIO);
+	close_gpio(RGB_B_GPIO);
 	printf("INFO  %s() Resources is released.\n", __FUNCTION__);
 }
 
@@ -147,16 +181,19 @@ int init_gpio()
 {
 	int ret;
 
+	if (set_gpio_mode(RGB_R_GPIO, OUTPUT) != 0)
+		return -1;
+	if (set_gpio_mode(RGB_G_GPIO, OUTPUT) != 0)
+		return -1;
+	if (set_gpio_mode(RGB_B_GPIO, OUTPUT) != 0)
+		return -1;
+
 	if (wiringPiSetupSys() != 0) {
-//	if (wiringPiSetup() != 0) {
 		printf("ERROR %s() Can't initialize GPIO.\n", __FUNCTION__);
 	    return -1;
 	}
 
 /*	pinMode(BUTTON_GPIO, INPUT);
-	pinMode(RGB_R_GPIO, OUTPUT);
-	pinMode(RGB_G_GPIO, OUTPUT);
-	pinMode(RGB_B_GPIO, OUTPUT);
 */
 	exit_thread = 0;
 	timerclear(&expiry_time);
