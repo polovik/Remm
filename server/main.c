@@ -76,8 +76,8 @@ void destroy_connection(int signum)
 {
 	printf("INFO  %s() Destroy connection. signum=%d\n", __FUNCTION__, signum);
 	release_camera(signum);
-	icedemo_destroy_instance(signum);
 	release_leds(signum);
+	icedemo_destroy_instance(signum);
 	exit(0);
 }
 
@@ -89,7 +89,7 @@ int main(int argc, char *argv[])
 
 	status_packet.magic = MAGIC_STATUS;
 	memset(&server_ctx, 0x00, sizeof(server_ctx_s));
-	server_ctx.capture_fps = 2.;
+	server_ctx.capture_fps = 0.5;
 	timerclear(&server_ctx.send_frame_timer);
 	timerclear(&server_ctx.send_status_timer);
 

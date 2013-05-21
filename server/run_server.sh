@@ -9,6 +9,13 @@ echo "out" > /sys/class/gpio/gpio30/direction
 echo "31" > /sys/class/gpio/export
 echo "out" > /sys/class/gpio/gpio31/direction
 
+#   Battery level checking
+echo "10" > /sys/class/gpio/export
+echo "out" > /sys/class/gpio/gpio10/direction
+echo "0" > /sys/class/gpio/gpio10/value
+echo "24" > /sys/class/gpio/export
+echo "in" > /sys/class/gpio/gpio24/direction
+
 echo "1" > /sys/class/gpio/gpio28/value
 echo "1" > /sys/class/gpio/gpio30/value
 echo "1" > /sys/class/gpio/gpio31/value
@@ -46,6 +53,8 @@ do
 	sleep 1
 done
 
+echo "10" > /sys/class/gpio/unexport
+echo "24" > /sys/class/gpio/unexport
 echo "28" > /sys/class/gpio/unexport
 echo "29" > /sys/class/gpio/unexport
 echo "30" > /sys/class/gpio/unexport
