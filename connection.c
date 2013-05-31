@@ -682,6 +682,7 @@ int start_connecting(host_side_e side) {
 	sleep(2);
 	if (prepare_connection(side) != 0) {
 		icedemo_destroy_instance(3);
+		return 1;
 	}
 	set_rgb_led_mode(RGB_RED);
 	printf("==============icedemo_create_instance\n");

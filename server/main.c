@@ -12,21 +12,19 @@
 #include "camera.h"
 #include "gpio.h"
 #include "../utils.h"
+#include "gps.h"
 
 #define STATUS_PACKET_TIMEOUT	500
 
 typedef struct {
 	int connection_established;
 	int camera_broken;
-	int battery_charge;
 	float capture_fps;
 	struct timeval send_frame_timer;
 	struct timeval send_status_timer;
 	/*	Position	*/
 	int height;		/**<	Height above ground */
 	int direction; /**<		Direction accordingly to North Pole	*/
-	float gps_latitude;
-	float gps_longitude;
 	int slope;		/**<	Slope accordingly to horizontal positions */
 } server_ctx_s;
 
@@ -57,8 +55,6 @@ void data_rx(unsigned char *data, unsigned int length)
 
 	server_ctx.height = control_packet->height;
 	server_ctx.direction = control_packet->direction;
-	server_ctx.gps_latitude = control_packet->gps_latitude;
-	server_ctx.gps_longitude = control_packet->gps_longitude;
 	server_ctx.slope = control_packet->slope;
 
 	float fps = control_packet->capture_fps;
@@ -77,6 +73,7 @@ void destroy_connection(int signum)
 	printf("INFO  %s() Destroy connection. signum=%d\n", __FUNCTION__, signum);
 	release_camera(signum);
 	release_leds(signum);
+	release_gps(signum);
 	icedemo_destroy_instance(signum);
 	exit(0);
 }
@@ -98,6 +95,8 @@ int main(int argc, char *argv[])
 
     if (init_gpio() != 0)
     	return 1;
+
+	init_gps();
 
 	if (init_camera() != 0)
 		server_ctx.camera_broken = 1;
@@ -123,12 +122,16 @@ int main(int argc, char *argv[])
 			}
 			/*	Send status packet	*/
 			if (is_timer_expired(&server_ctx.send_status_timer)) {
+				double lat = 0.0;
+				double lon = 0.0;
 				status_packet.height = server_ctx.height;
 				status_packet.direction = server_ctx.direction;
-				status_packet.gps_latitude = server_ctx.gps_latitude;
-				status_packet.gps_longitude = server_ctx.gps_longitude;
+				if (get_gps_pos(&lat, &lon)) {
+					status_packet.gps_latitude = lat;
+					status_packet.gps_longitude = lon;
+				}
 				status_packet.slope = server_ctx.slope;
-				status_packet.battery_charge = 100;
+				status_packet.battery_charge = get_battery_charge();
 				send_data(1, (unsigned char *)&status_packet, sizeof(status_packet_s));
 				add_timer(STATUS_PACKET_TIMEOUT, &server_ctx.send_status_timer);
 			}

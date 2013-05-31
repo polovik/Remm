@@ -46,6 +46,7 @@ do
 	if [ $button_pressed = "1" ]
 	then
 		echo Button has pressed
+		stty -F /dev/ttyAMA0 9600 cs8 -icanon
 		./server
 	fi
 	sleep 1

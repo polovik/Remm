@@ -13,6 +13,8 @@ static unsigned int picture_length;
 static pthread_mutex_t display_mutex;
 
 void display_fps(IplImage *image, float fps);
+void display_battery(IplImage *image, int charge);
+void display_gps_pos(IplImage *image, double lat, double lon);
 
 int init_display()
 {
@@ -30,6 +32,8 @@ int init_display()
 
 	IplImage *image = cvLoadImage("background.jpg", CV_LOAD_IMAGE_COLOR);
 	display_fps(image, 0.5);
+	display_battery(image, 77);
+	display_gps_pos(image, 15.15, 17.17);
 	cvShowImage(DISPLAY_WINDOW_NAME, image);
 	cvReleaseImage(&image);
 
@@ -75,7 +79,35 @@ void display_fps(IplImage *image, float fps)
 	cvPutText(image, text, point, &font, CV_RGB(250,0,0));
 }
 
-void display_frame(float fps)
+void display_battery(IplImage *image, int charge)
+{
+	CvPoint point;
+	point.x = 10;
+	point.y = 50;
+	CvFont font;
+	cvInitFont(&font, CV_FONT_HERSHEY_SIMPLEX, 0.5, 0.5, 0, 1, 8);
+	cvPutText(image, "BAT: ", point, &font, CV_RGB(250,0,0));
+	point.x += 40;
+	char text[10];
+	sprintf(text, "%d%%", charge);
+	cvPutText(image, text, point, &font, CV_RGB(250,0,0));
+}
+
+void display_gps_pos(IplImage *image, double lat, double lon)
+{
+	CvPoint point;
+	point.x = 10;
+	point.y = 80;
+	CvFont font;
+	cvInitFont(&font, CV_FONT_HERSHEY_SIMPLEX, 0.5, 0.5, 0, 1, 8);
+	cvPutText(image, "GPS: ", point, &font, CV_RGB(250,0,0));
+	point.x += 40;
+	char text[10];
+	sprintf(text, "LAT - %f, LON - %f", lat, lon);
+	cvPutText(image, text, point, &font, CV_RGB(250,0,0));
+}
+
+void display_frame(float fps, int charge, double lat, double lon)
 {
 	IplImage *image;
 	CvMat encodedMat;
@@ -95,6 +127,8 @@ void display_frame(float fps)
 	}
 
 	display_fps(image, fps);
+	display_battery(image, charge);
+	display_gps_pos(image, lat, lon);
 	cvShowImage(DISPLAY_WINDOW_NAME, image);
 	cvReleaseImage(&image);
 

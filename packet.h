@@ -34,8 +34,8 @@ typedef struct {
 	magic_e magic;
 	int height;		/**<	Height above ground */
 	int direction; /**<		Direction accordingly to North Pole	*/
-	float gps_latitude;
-	float gps_longitude;
+	double gps_latitude;
+	double gps_longitude;
 	int slope;		/**<	Slope accordingly to horizontal positions */
 	int battery_charge;
 	char info[100];
@@ -56,8 +56,8 @@ typedef struct {
 	magic_e magic;
 	int height;
 	int direction;
-	float gps_latitude;
-	float gps_longitude;
+	double gps_latitude;
+	double gps_longitude;
 	int slope;
 	float capture_fps;	/**<	0(turn off camera), [0.1 to 2] step=0.1, (2 to 10] step=1 */
 	autopilot_command_e command;

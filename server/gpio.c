@@ -27,6 +27,7 @@ static pthread_t battery_thread;
 static int exit_thread = 0;
 static struct timeval expiry_time;
 static int led_turned_on;
+static int battery_charge = 0;
 
 void *rgb_control(void *arg)
 {
@@ -171,6 +172,7 @@ void *battery_status(void *arg)
 {
 	struct timeval started_at, finished_at, elapsed;
 	int charging_duration, discharging_duration;
+	int i;
 
 	printf("INFO  %s() Start battery level checking.\n", __FUNCTION__);
 	while (exit_thread == 0) {
@@ -178,7 +180,11 @@ void *battery_status(void *arg)
 		printf("INFO  %s() Charge capacity.\n", __FUNCTION__);
 		digitalWrite(BATTERY_CHARGE_CAPACITY_GPIO, HIGH);
 		gettimeofday(&started_at, NULL);
-		sleep(5);
+		for (i = 0; i < 5; i++) {
+			sleep(1);
+			if (exit_thread != 0)
+				return 0;
+		}
 		digitalWrite(BATTERY_CHARGE_CAPACITY_GPIO, LOW);
 		gettimeofday(&finished_at, NULL);
 		timersub(&finished_at, &started_at, &elapsed);
@@ -192,10 +198,20 @@ void *battery_status(void *arg)
 		gettimeofday(&finished_at, NULL);
 		timersub(&finished_at, &started_at, &elapsed);
 		discharging_duration = elapsed.tv_sec * 1000000 + elapsed.tv_usec;
-		printf("INFO  %s() Capacity has been discharged on %dusec.\n", __FUNCTION__, discharging_duration);
-		sleep(10);
+		battery_charge = (discharging_duration - charging_duration);
+		printf("INFO  %s() Capacity has been discharged on %dusec. Battery charge = %d\n", __FUNCTION__, discharging_duration, battery_charge);
+		for (i = 0; i < 10; i++) {
+			sleep(1);
+			if (exit_thread != 0)
+				return 0;
+		}
 	}
 	return 0;
+}
+
+int get_battery_charge()
+{
+	return battery_charge;
 }
 
 void release_leds(int signum)
