@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+    <style type="text/css">
+      html { height: 100% }
+      body { height: 100%; margin: 0; padding: 0 }
+      #map_canvas { height: 100% }
+    </style>
+    <script type="text/javascript"
+      src="http://maps.googleapis.com/maps/api/js?key=AIzaSyCQIVf1wICSqackkITn4J5SBah4ks6PykA&sensor=false">
+    </script>
+    <script type="text/javascript">
+      var map;
+      var markers = [];
+      var marker_cur_pos = null;
+
+      function initialize() {
+        var myLatLng = new google.maps.LatLng(0, -180);
+        var myOptions = {
+          center: myLatLng,
+          zoom: 3,
+          mapTypeId: google.maps.MapTypeId.TERRAIN,
+          panControl: true
+        };
+        map = new google.maps.Map(document.getElementById("map_canvas"), myOptions);
+        var marker = new google.maps.Marker({
+            position: map.getCenter(),
+            map: map,
+            title: 'Click to zoom'
+          });
+      google.maps.event.addListener(marker, 'click', function() {
+            map.panBy(100, 100);
+//          map.setZoom(8);
+//          map.setCenter(marker.getPosition());
+        });
+      }
+
+      function show_poliline(prevLat, prevLng, curLat, curLng) {
+          var flightPlanCoordinates = [
+                new google.maps.LatLng(prevLat, prevLng),
+                new google.maps.LatLng(curLat, curLng)
+            ];
+            var flightPath = new google.maps.Polyline({
+              path: flightPlanCoordinates,
+              strokeColor: '#FF0000',
+              strokeOpacity: 1.0,
+              strokeWeight: 2
+            });
+          flightPath.setMap(map);
+      }
+
+      function draw_arrow(prevLat, prevLng, curLat, curLng) {
+          var lineCoordinates = [
+            new google.maps.LatLng(prevLat, prevLng),
+            new google.maps.LatLng(curLat, curLng)
+          ];
+          var lineSymbol = {
+            path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW
+          };
+          var line = new google.maps.Polyline({
+            path: lineCoordinates,
+            icons: [{
+              icon: lineSymbol,
+              offset: '100%'
+            }],
+            map: map
+          });
+      }
+
+      function set_marker(lat, lon, label) {
+          var marker_pos = new google.maps.LatLng(lat, lon);
+          var marker = new google.maps.Marker({
+              position: marker_pos,
+              map: map,
+              title: label
+          });
+      }
+
+      function display_current_position(lat, lon) {
+          var pos = new google.maps.LatLng(lat, lon);
+          if (marker_cur_pos == null) {
+              marker_cur_pos = new google.maps.Marker({
+                  position: pos,
+                  map: map,
+                  title: 'CUR_POS'
+              });
+          } else {
+             marker_cur_pos.setPosition(pos);
+          }
+          map.setCenter(pos);
+      }
+    </script>
+  </head>
+  <body onload="initialize()">
+    <div id="map_canvas" style="width:100%; height:100%"></div>
+  </body>
+</html>
+
