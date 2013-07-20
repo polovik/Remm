@@ -6,6 +6,12 @@ import QtMultimedia 5.0
 Rectangle {
     width: 700
     height: 500
+    focus: true
+//    Keys.onPressed:{ console.log("Key pressed"); }
+    Keys.onUpPressed:{ console.log("Up pressed"); }
+    Keys.onDownPressed:{ console.log("Down pressed"); }
+    Keys.onLeftPressed:{ console.log("Left pressed"); }
+    Keys.onRightPressed:{ console.log("Right pressed"); }
 
     WebView {
         id: navigationView
@@ -16,7 +22,7 @@ Rectangle {
         width: 272
         height: 241
         objectName: "navigationView"
-        Keys.onPressed:{ console.log("Key pressed"); }
+        enabled : false
 //        focus: false
 /*        onNavigationRequested: {
             console.log("url =", request.url, "navigationType =", request.navigationType)
@@ -282,6 +288,7 @@ Rectangle {
         width: 279
         height: 81
         property int curDirection: 45
+        property int expectedDirection: -10
         onPaint: {
             var ctx = compassCanvas.getContext('2d')
             var directionArrowHeight = height * 0.1
@@ -368,35 +375,111 @@ Rectangle {
                     ctx.stroke()
                 }
             }
+            ctx.resetTransform()
 
+            //  Draw expected direction arrow
+            ctx.translate(width / 2, directionArrowHeight + radious)
+            var expDir = expectedDirection
+            if ((expDir - curDirection) > 180) {
+                expDir = expDir - 360
+            } else if ((curDirection - expDir) > 180) {
+                expDir = expDir + 360
+            }
+
+            if ((expDir - curDirection) > compassAnglesRange) {
+                expDir = curDirection + compassAnglesRange
+            } else if ((curDirection - expDir) > compassAnglesRange) {
+                expDir = curDirection - compassAnglesRange
+            }
+
+            var radians = Math.PI - (expDir - curDirection) * dirAnglesStep * Math.PI / 180
+//            console.log(expectedDirection, radians)
+            ctx.translate((radious) * Math.sin(radians), (radious) * Math.cos(radians))
+            ctx.rotate(-(Math.PI + radians))
+            ctx.lineWidth = 3
+            ctx.strokeStyle = "#FF00FF"
+            ctx.beginPath()
+            ctx.moveTo(0, 0)
+            ctx.lineTo(directionArrowHeight, -directionArrowHeight)
+            ctx.lineTo(directionArrowHeight, directionArrowHeight)
+            ctx.lineTo(-directionArrowHeight, directionArrowHeight)
+            ctx.lineTo(-directionArrowHeight, -directionArrowHeight)
+            ctx.closePath()
+            ctx.stroke()
             ctx.resetTransform()
         }
     }
 
+    Label {
+        id: labelFPS
+        x: 406
+        y: 295
+        width: 212
+        height: 17
+        text: ""
+        function updateLabel(fps) {
+            text = "Camera FPS: " + fps
+        }
+    }
+
     Slider {
-        id: itemSlider1
+        id: sliderFPS
         x: 406
         y: 312
         width: 212
         height: 22
-        minimumValue: -200
-        maximumValue: 200
-        stepSize: 1
+        orientation: 1
+        updateValueWhileDragging: true
+        minimumValue: 0.1
+        maximumValue: 10
+        stepSize: 0.1
         tickmarksEnabled: true
         onValueChanged: {
-            //print(value)
-            outboardDisplayCanvas.heelAngle = value
-            outboardDisplayCanvas.requestPaint()
+            var fps = Math.floor(value * 10) / 10
+            //outboardDisplayCanvas.heelAngle = value
+            //outboardDisplayCanvas.requestPaint()
+            labelFPS.updateLabel(fps)
         }
-
+        Component.onCompleted: {
+            value = 1
+            labelFPS.updateLabel(value)
+        }
     }
 
     VideoOutput {
-        id: cameraCanvas
+        id: canvasCamera
         x: 44
         y: 19
         width: 320
         height: 240
-        source: sourceCamera
+//        source: sourceCamera
+    }
+
+    Slider {
+        id: slider__horizontal_1
+        x: 412
+        y: 446
+        value: 45
+        tickmarksEnabled: true
+        stepSize: 1
+        maximumValue: 360
+        onValueChanged: {
+            compassCanvas.curDirection = value
+            compassCanvas.requestPaint()
+        }
+    }
+
+    Slider {
+        id: slider__horizontal_2
+        x: 412
+        y: 474
+        value: 45
+        tickmarksEnabled: true
+        stepSize: 1
+        maximumValue: 360
+        onValueChanged: {
+            compassCanvas.expectedDirection = value
+            compassCanvas.requestPaint()
+        }
     }
 }
