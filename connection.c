@@ -216,7 +216,7 @@ static int icedemo_worker_thread(void *unused) {
 int picture_assembly(unsigned char *data, unsigned int length)
 {
 	extern void picture_rx(unsigned char *data, unsigned int length);
-	static picture_packet_s prev_packet = { .picture_id = -1 } ;
+    static picture_packet_s prev_packet = { /*magic*/ MAGIC_STATUS, /*picture_id*/ -1, /*picture_size*/ 0, /*fragment_id*/ 0, /*fragment_size*/ 0, /*data*/ "" } ;
 	static unsigned char *picture;
 	picture_packet_s *packet = (picture_packet_s *)data;
 
@@ -233,7 +233,7 @@ int picture_assembly(unsigned char *data, unsigned int length)
 		free(picture);
 		printf("INFO  %s() Start receiving new picture %d.\n", __FUNCTION__, packet->picture_id);
 		prev_packet = *packet;
-		picture = malloc(packet->picture_size);
+        picture = (unsigned char *)malloc(packet->picture_size);
 	}
 	unsigned int dest_pos = packet->fragment_id * FRAGMENT_SIZE;
 	if ((dest_pos + packet->fragment_size) > packet->picture_size) {

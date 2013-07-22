@@ -26,10 +26,10 @@ static void on_complete(pj_http_req *hreq, pj_status_t status,
     memset(http_page, 0x00, sizeof(http_page));
     if (resp->size > 0 && resp->data) {
     	if (resp->size < sizeof(http_page)) {
-			strncpy(http_page, resp->data, resp->size);
+            strncpy(http_page, (char *)resp->data, resp->size);
 			http_page[resp->size] = 0x00;
     	} else {
-			strncpy(http_page, resp->data, sizeof(http_page));
+            strncpy(http_page, (char *)resp->data, sizeof(http_page));
 			http_page[sizeof(http_page) - 1] = 0x00;
     	}
     }
