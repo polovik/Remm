@@ -6,12 +6,23 @@ import QtMultimedia 5.0
 Rectangle {
     width: 700
     height: 500
+    color: "#525c51"
     focus: true
 //    Keys.onPressed:{ console.log("Key pressed"); }
     Keys.onUpPressed:{ console.log("Up pressed"); }
     Keys.onDownPressed:{ console.log("Down pressed"); }
-    Keys.onLeftPressed:{ console.log("Left pressed"); }
-    Keys.onRightPressed:{ console.log("Right pressed"); }
+    Keys.onLeftPressed: {
+        compassCanvas.expectedDirection -= 10
+        if (compassCanvas.expectedDirection < 0)
+            compassCanvas.expectedDirection += 360
+        compassCanvas.requestPaint()
+    }
+    Keys.onRightPressed: {
+        compassCanvas.expectedDirection += 10
+        if (compassCanvas.expectedDirection > 360)
+            compassCanvas.expectedDirection -= 360
+        compassCanvas.requestPaint()
+    }
 
     WebView {
         id: navigationView
@@ -287,8 +298,8 @@ Rectangle {
         y: 358
         width: 279
         height: 81
-        property int curDirection: 45
-        property int expectedDirection: -10
+        property int curDirection: 0
+        property int expectedDirection: 0
         onPaint: {
             var ctx = compassCanvas.getContext('2d')
             var directionArrowHeight = height * 0.1
@@ -434,10 +445,11 @@ Rectangle {
         maximumValue: 10
         stepSize: 0.1
         tickmarksEnabled: true
+        function getFPS() {
+            return Math.floor(value * 10) / 10;
+        }
         onValueChanged: {
             var fps = Math.floor(value * 10) / 10
-            //outboardDisplayCanvas.heelAngle = value
-            //outboardDisplayCanvas.requestPaint()
             labelFPS.updateLabel(fps)
         }
         Component.onCompleted: {
@@ -452,7 +464,7 @@ Rectangle {
         y: 19
         width: 320
         height: 240
-//        source: sourceCamera
+        source: sourceCamera
     }
 
     Slider {
@@ -465,20 +477,6 @@ Rectangle {
         maximumValue: 360
         onValueChanged: {
             compassCanvas.curDirection = value
-            compassCanvas.requestPaint()
-        }
-    }
-
-    Slider {
-        id: slider__horizontal_2
-        x: 412
-        y: 474
-        value: 45
-        tickmarksEnabled: true
-        stepSize: 1
-        maximumValue: 360
-        onValueChanged: {
-            compassCanvas.expectedDirection = value
             compassCanvas.requestPaint()
         }
     }

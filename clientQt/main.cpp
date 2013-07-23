@@ -7,8 +7,10 @@
 #include <QQmlContext>
 #include "../connection.h"
 #include "../packet.h"
+#include "camerasource.h"
 
-QQmlContext *context;
+QQmlContext *context = NULL;
+CameraSource *cameraSource = NULL;
 
 class CallableClass : public QObject
 {
@@ -71,18 +73,13 @@ void picture_rx(unsigned char *data, unsigned int length)
         return;
     }
 
+    if (cameraSource != NULL)
+        cameraSource->displayFrame(data, length);
+
     char filename[] = "captured.jpg";
     FILE *file = fopen(filename, "wb");
     fwrite(data, 1, length, file);
     fclose(file);
-
-/*	pthread_mutex_lock(&display_mutex);
-    picture_length = length;
-    if (picture_data != NULL)
-        free(picture_data);
-    picture_data = malloc(picture_length);
-    memcpy(picture_data, data, picture_length);
-    pthread_mutex_unlock(&display_mutex);*/
 }
 
 void destroy_connection(int signum)
@@ -102,8 +99,8 @@ int main(int argc, char* argv[])
     // Register signal and signal handler
     signal(SIGINT, destroy_connection);
 
-    if (start_connecting(SIDE_CLIENT) != 0)
-        destroy_connection(0);  //  Exit
+//    if (start_connecting(SIDE_CLIENT) != 0)
+//        destroy_connection(0);  //  Exit
 
     printf("INFO  %s() Enter in Main LOOP.\n", __FUNCTION__);
 /*    while (1) {
@@ -119,9 +116,12 @@ int main(int argc, char* argv[])
     }
     printf("INFO  %s() Exit from Main LOOP.\n", __FUNCTION__);
 */
-    CallableClass *cl = new CallableClass();
+//    CallableClass *cl = new CallableClass();
+    cameraSource = new CameraSource(QSize(640, 480));
+
     context = view.rootContext();
-    view.rootContext()->setContextProperty("cppObject", (QObject*)cl);
+//    view.rootContext()->setContextProperty("cppObject", (QObject*)cl);
+    context->setContextProperty("sourceCamera", (QObject *)cameraSource);
     view.setSource(QUrl("mainWindow.qml"));
     view.show();
 

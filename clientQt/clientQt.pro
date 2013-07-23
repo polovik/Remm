@@ -1,9 +1,9 @@
 TEMPLATE = app
 
-QT += quick qml
+QT += quick qml multimedia
 
-SOURCES += main.cpp ../connection.c ../http.c
-HEADERS += ../connection.h ../http.h ../packet.h
+SOURCES += main.cpp camerasource.cpp ../connection.c ../http.c
+HEADERS += camerasource.h ../connection.h ../http.h ../packet.h
 DEFINES += CLIENT_SIDE=1
 
 HOST_PJ = ../../pjproject-i686
@@ -18,5 +18,5 @@ QMAKE_CC = g++
 
 RESOURCES +=
 
-OTHER_FILES = mainWindow.qml ../utils.c ../utils.h ../connect.cgi ../README.md
+OTHER_FILES = mainWindow.qml google_maps.html ../connect.cgi ../README.md
 

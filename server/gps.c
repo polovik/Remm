@@ -61,10 +61,9 @@ void *gps_polling(void *arg)
     	}
     	nmea_parse(&parser, buff, size, &gps_info);
 
-        nmea_info2pos(&gps_info, &dpos);
-
-        printf("%03d, Lat: %f, Lon: %f, Sig: %d, Fix: %d\n",
-        		it++, dpos.lat, dpos.lon, gps_info.sig, gps_info.fix);
+//        printf("%03d, Lat: %f, Lon: %f, Sig: %d, Fix: %d\n",
+//        		it++, nmea_ndeg2degree(gps_info.lat), nmea_ndeg2degree(gps_info.lon),
+//        		gps_info.sig, gps_info.fix);
     }
 
     nmea_parser_destroy(&parser);
@@ -114,13 +113,11 @@ void release_gps(int signum)
 
 int get_gps_pos(double *lat, double *lon)
 {
-	nmeaPOS dpos;
 	if (uart_fd <= 0)
 		return -1;
 
-	nmea_info2pos(&gps_info, &dpos);
-	*lat = dpos.lat;
-	*lon = dpos.lon;
+	*lat = nmea_ndeg2degree(gps_info.lat);
+	*lon = nmea_ndeg2degree(gps_info.lon);
 
 	return 1;
 }
