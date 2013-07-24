@@ -99,8 +99,8 @@ int main(int argc, char* argv[])
     // Register signal and signal handler
     signal(SIGINT, destroy_connection);
 
-//    if (start_connecting(SIDE_CLIENT) != 0)
-//        destroy_connection(0);  //  Exit
+    if (start_connecting(SIDE_CLIENT) != 0)
+        destroy_connection(0);  //  Exit
 
     printf("INFO  %s() Enter in Main LOOP.\n", __FUNCTION__);
 /*    while (1) {

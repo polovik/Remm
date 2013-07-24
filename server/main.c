@@ -74,7 +74,8 @@ void destroy_connection(int signum)
 	release_camera(signum);
 	release_leds(signum);
 	release_gps(signum);
-	icedemo_destroy_instance(signum);
+	if (signum != 22)
+		icedemo_destroy_instance(signum);
 	exit(0);
 }
 
@@ -102,7 +103,7 @@ int main(int argc, char *argv[])
 		server_ctx.camera_broken = 1;
 
     if (start_connecting(SIDE_SERVER) != 0)
-    	return 1;
+    	destroy_connection(22);	//	Exit from program
 
     printf("INFO  %s() Enter in Main LOOP\n", __FUNCTION__);
 	while (1) {

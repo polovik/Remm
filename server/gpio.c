@@ -175,6 +175,8 @@ void *battery_status(void *arg)
 	int i;
 
 	printf("INFO  %s() Start battery level checking.\n", __FUNCTION__);
+	return 0;
+
 	while (exit_thread == 0) {
 		/*	Charge	*/
 		printf("INFO  %s() Charge capacity.\n", __FUNCTION__);
