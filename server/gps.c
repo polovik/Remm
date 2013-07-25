@@ -36,8 +36,6 @@ void *gps_polling(void *arg)
     nmeaPARSER parser;
     char buff[2048];
     int size;
-    int it = 0;
-    nmeaPOS dpos;
 
 //    nmea_property()->trace_func = &trace;
     nmea_property()->error_func = &error;
