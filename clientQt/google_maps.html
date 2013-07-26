@@ -16,12 +16,12 @@
       var marker_cur_pos = null;
 
       function initialize() {
-        var myLatLng = new google.maps.LatLng(0, -180);
+        var myLatLng = new google.maps.LatLng(53.919328, 27.500415);
         var myOptions = {
           center: myLatLng,
-          zoom: 3,
-          mapTypeId: google.maps.MapTypeId.TERRAIN,
-          panControl: true
+          zoom: 19,
+          mapTypeId: google.maps.MapTypeId.HYBRID,
+          disableDefaultUI: true
         };
         map = new google.maps.Map(document.getElementById("map_canvas"), myOptions);
         var marker = new google.maps.Marker({

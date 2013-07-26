@@ -29,39 +29,29 @@ Rectangle {
         x: 0
         y: 259
         url: "google_maps.html"
-//        url: "http://www.ya.ru"
         width: 272
         height: 241
         objectName: "navigationView"
-        enabled : false
-//        focus: false
-/*        onNavigationRequested: {
-            console.log("url =", request.url, "navigationType =", request.navigationType)
-            switch (request.navigationType)
-            {
-            case WebView.LinkClickedNavigation:
-            case WebView.FormSubmittedNavigation:
-            case WebView.BackForwardNavigation:
-            case WebView.ReloadNavigation:
-            case WebView.FormResubmittedNavigation:
-            case WebView.OtherNavigation:
-                    request.action = WebView.AcceptRequest
-                    return
-            }
-//            request.action = WebView.IgnoreRequest
-            request.action = WebView.AcceptRequest
-        }*/
-/*        MouseArea {
-            id: mousearea1
-            x: 145
-            y: 144
-            width: 180
-            height: 107
-            onClicked: {
-                navigationView.flick(100,100)
+        enabled: false
+
+        Image {
+            id: imageZoom
+            x: 12
+            y: 12
+            width: 83
+            height: 26
+            source: "plus_minus.png"
+            MouseArea {
+                id: mouseAreaZoom
+                anchors.fill: parent
+                onClicked: {
+                    if (mouse.x < width / 2)
+                        console.log("Plus")
+                    else
+                        console.log("Minus")
+                }
             }
         }
-        */
     }
 
     Canvas {

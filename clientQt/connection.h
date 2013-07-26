@@ -21,6 +21,7 @@ private:
 
 signals:
     void pictureReceived(QImage jpgImage);
+    void gpsPosReceived(float Lat, float Lon);
 
 public slots:
     void tryDirectConnectToRPi(QString address, quint16 port);

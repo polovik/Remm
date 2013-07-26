@@ -22,6 +22,7 @@ void Connection::tryDirectConnectToRPi(QString address, quint16 port)
 {
     udpSocket->close();
     udpSocket->connectToHost(address, port);
+    emit gpsPosReceived(20, 20);
 }
 
 void Connection::startCommunicate()
@@ -65,6 +66,7 @@ void Connection::data_rx(unsigned char *data, unsigned int length)
             "slope=%d, battery_charge=%d, info=%s.", __FUNCTION__,
             status_packet->height, status_packet->direction, status_packet->gps_latitude,
             status_packet->gps_longitude, status_packet->slope, status_packet->battery_charge, status_packet->info);
+    emit gpsPosReceived(status_packet->gps_latitude, status_packet->gps_longitude);
 }
 
 void Connection::picture_rx(unsigned char *data, unsigned int length)
@@ -80,10 +82,10 @@ void Connection::picture_rx(unsigned char *data, unsigned int length)
     jpgImage.loadFromData(data, length, "JPG");
     emit pictureReceived(jpgImage);
 
-    char filename[] = "captured.jpg";
-    FILE *file = fopen(filename, "wb");
-    fwrite(data, 1, length, file);
-    fclose(file);
+//    char filename[] = "captured.jpg";
+//    FILE *file = fopen(filename, "wb");
+//    fwrite(data, 1, length, file);
+//    fclose(file);
 }
 
 /**	Check for picture inside packet.
