@@ -66,18 +66,19 @@ void *command_rx(void *arg)
     while (exit_thread == 0) {
 		usleep(1000 * 1000);
 		addr_len = sizeof(remote_udp_addr);
+		memset(data, 0x00, sizeof(data));
 		errno = 0;
 		//	TODO Add correct working with socket - add mutex and move to separate thread
 		bytes_read = recvfrom(udp_socket, data, sizeof(data),
-							  MSG_DONTWAIT | MSG_TRUNC,
+							  MSG_DONTWAIT,
 							  (struct sockaddr *)&remote_udp_addr, &addr_len);
 		if (bytes_read <= 0) {
 			if (errno == EAGAIN) {
-				printf("INFO  %s() Avoid blocking\n", __FUNCTION__);
+//				printf("INFO  %s() Avoid blocking\n", __FUNCTION__);
 			} else {
 				perror("Receive data from UDP socket");
-				continue;
 			}
+			continue;
 		}
 
 		if (bytes_read != sizeof(control_packet_s)) {
@@ -100,8 +101,7 @@ void *command_rx(void *arg)
 		if (new_client != 0) {
 			printf("INFO  %s() Connection established\n", __FUNCTION__);
 			server_ctx.connection_established = 1;
-			memcpy(&client_udp_addr.sin6_addr, &remote_udp_addr.sin6_addr, sizeof(client_udp_addr.sin6_addr));
-			memcpy(&client_udp_addr.sin6_port, &remote_udp_addr.sin6_port, sizeof(client_udp_addr.sin6_port));
+			memcpy(&client_udp_addr, &remote_udp_addr, sizeof(client_udp_addr));
 			unsigned int timeout = 1000. / server_ctx.capture_fps;
 			add_timer(timeout, &server_ctx.send_frame_timer);
 			add_timer(STATUS_PACKET_TIMEOUT, &server_ctx.send_status_timer);
@@ -272,7 +272,7 @@ int main(int argc, char *argv[])
 				if (errno == EAGAIN) {
 					printf("INFO  %s() Avoid blocking sending status\n", __FUNCTION__);
 				} else {
-					perror("Sending status UDP socket");
+					perror("Sending status through UDP socket");
 				}
 				continue;
 			}

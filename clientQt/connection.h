@@ -15,6 +15,7 @@ private:
     void data_rx(unsigned char *data, unsigned int length);
     void picture_rx(unsigned char *data, unsigned int length);
     int picture_assembly(unsigned char *data, unsigned int length);
+    void send_command();
 
     QUdpSocket *udpSocket;
 

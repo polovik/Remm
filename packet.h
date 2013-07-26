@@ -20,6 +20,7 @@ typedef enum {
 //	http://stackoverflow.com/questions/1098897/what-is-the-largest-safe-udp-packet-size-on-the-internet
 //	http://stackoverflow.com/questions/900697/how-to-find-the-largest-udp-packet-i-can-send-without-fragmenting
 //	PJSIP_UDP_SIZE_THRESHOLD	1300
+#pragma pack(push, 1)
 typedef struct {
 	magic_e magic;
 	int picture_id;
@@ -62,5 +63,6 @@ typedef struct {
 	float capture_fps;	/**<	0(turn off camera), [0.1 to 2] step=0.1, (2 to 10] step=1 */
 	autopilot_command_e command;
 } control_packet_s;
+#pragma pack(pop)
 
 #endif /* PACKET_H_ */

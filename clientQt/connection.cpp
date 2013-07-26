@@ -27,7 +27,8 @@ void Connection::tryDirectConnectToRPi(QString address, quint16 port)
 void Connection::startCommunicate()
 {
     qDebug() << typeid(*this).name() << ":" << __FUNCTION__ << "()";
-//    udpSocket->write("Hello!");
+    udpSocket->write("Hello!");
+    send_command();
 //    qDebug() << __PRETTY_FUNCTION__;
 }
 
@@ -50,28 +51,28 @@ void Connection::data_rx(unsigned char *data, unsigned int length)
     status_packet_s *status_packet;
 
     if (length != sizeof(status_packet_s)) {
-        printf("ERROR %s() Unexpected packet size %d: %.*s\n", __FUNCTION__, length, length, data);
+        qDebug("ERROR %s() Unexpected packet size %d: %.*s", __FUNCTION__, length, length, data);
         return;
     }
     status_packet = (status_packet_s *)data;
     if (status_packet->magic != MAGIC_STATUS) {
-        printf("ERROR %s() Unexpected packet type %d: %.*s\n", __FUNCTION__, status_packet->magic, length, data);
+        qDebug("ERROR %s() Unexpected packet type %d: %.*s", __FUNCTION__, status_packet->magic, length, data);
         return;
     }
 
     memcpy(&last_status, status_packet, sizeof(status_packet_s));
-    printf("INFO  %s() height=%d, direction=%d, gps_latitude=%f, gps_longitude=%f, "
-            "slope=%d, battery_charge=%d, info=%s.\n", __FUNCTION__,
+    qDebug("INFO  %s() height=%d, direction=%d, gps_latitude=%f, gps_longitude=%f, "
+            "slope=%d, battery_charge=%d, info=%s.", __FUNCTION__,
             status_packet->height, status_packet->direction, status_packet->gps_latitude,
             status_packet->gps_longitude, status_packet->slope, status_packet->battery_charge, status_packet->info);
 }
 
 void Connection::picture_rx(unsigned char *data, unsigned int length)
 {
-    printf("INFO  %s() Picture has just received.\n", __FUNCTION__);
+    qDebug("INFO  %s() Picture has just received.", __FUNCTION__);
 
     if ((length == 0) || (data == NULL)) {
-        printf("ERROR %s() Incorrect arguments data=0x%X, length=%d\n", __FUNCTION__, (unsigned int)data, length);
+        qDebug("ERROR %s() Incorrect arguments data=0x%X, length=%d", __FUNCTION__, (unsigned int)data, length);
         return;
     }
 
@@ -98,21 +99,21 @@ int Connection::picture_assembly(unsigned char *data, unsigned int length)
         return 0;
 
     if (packet->picture_id < prev_packet.picture_id) {
-        printf("INFO  %s() Received frame %d for old picture %d. Skip it.\n",
+        qDebug("INFO  %s() Received frame %d for old picture %d. Skip it.",
                __FUNCTION__, packet->picture_id, prev_packet.picture_id);
         return 1;
     }
     if (packet->picture_id > prev_packet.picture_id) {
         picture_rx(picture, prev_packet.picture_size);
         free(picture);
-        printf("INFO  %s() Start receiving new picture %d.\n", __FUNCTION__, packet->picture_id);
+        qDebug("INFO  %s() Start receiving new picture %d.", __FUNCTION__, packet->picture_id);
         prev_packet = *packet;
         picture = (unsigned char *)malloc(packet->picture_size);
     }
     unsigned int dest_pos = packet->fragment_id * FRAGMENT_SIZE;
     if ((dest_pos + packet->fragment_size) > packet->picture_size) {
-        printf("ERROR %s() Incorrect packet - May occur \"Out of memory\"."
-               "Allocated memory size = %dbytes, request %dbytes. fragment_id=%d, fragment_size=%d.\n",
+        qDebug("ERROR %s() Incorrect packet - May occur \"Out of memory\"."
+               "Allocated memory size = %dbytes, request %dbytes. fragment_id=%d, fragment_size=%d.",
                __FUNCTION__, packet->picture_size, dest_pos + packet->fragment_size, packet->fragment_id, packet->fragment_size);
         return 1;
     }
@@ -124,8 +125,8 @@ void Connection::readPendingDatagram()
 {
     unsigned char *data;
     unsigned int length = udpSocket->bytesAvailable();
-    qDebug() << typeid(*this).name() << ":" << __FUNCTION__ << "()";
-    qDebug() << length;
+//    qDebug() << typeid(*this).name() << ":" << __FUNCTION__ << "()"
+//             << "Received" << length << "bytes";
     data = new (nothrow) unsigned char[length];
     if (data == NULL) {
         qDebug() << typeid(*this).name() << ":" << __FUNCTION__ << "()"
@@ -140,11 +141,25 @@ void Connection::readPendingDatagram()
         return;
     }
 
-    qDebug() << typeid(*this).name() << ":" << __FUNCTION__ << "()"
-             << "Received" << length << "bytes";
     if (picture_assembly(data, length) == 1)
         return;
 
     data_rx(data, length);
     delete[] data;
+}
+
+void Connection::send_command()
+{
+    control_packet_s control_packet;
+
+    control_packet.magic = MAGIC_COMMAND;
+    control_packet.height = 0;
+    control_packet.direction = 0;
+    control_packet.gps_latitude = 16.22;
+    control_packet.gps_longitude = 15.44;
+    control_packet.slope = 0;
+    control_packet.capture_fps = 1.0;
+    control_packet.command = AUTOPILOT_OFF;
+    int sended = udpSocket->write((char *)&control_packet, sizeof(control_packet_s));
+    qDebug() << "send_command()" << sizeof(control_packet_s) << sended;
 }

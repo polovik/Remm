@@ -12,6 +12,6 @@ int is_capture_aborted();
 void stop_capturing();
 
 int init_camera();
-void release_camera();
+void release_camera(int signum);
 
 #endif /* CAMERA_H_ */

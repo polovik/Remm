@@ -18,11 +18,8 @@ void CameraSource::setVideoSurface(QAbstractVideoSurface *surface)
     m_videoSurface->present(frame);
 }
 
-void CameraSource::displayFrame(unsigned char *data, unsigned int length)
+void CameraSource::displayFrame(QImage jpgImage)
 {
-    QImage jpgImage;
-    jpgImage.loadFromData(data, length, "JPG");
-
     QVideoFrame frame(jpgImage.scaled(m_size));
     m_videoSurface->present(frame);
 }

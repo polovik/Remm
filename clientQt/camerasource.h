@@ -21,7 +21,7 @@ private:
 
 public Q_SLOTS:
     void setVideoSurface(QAbstractVideoSurface *surface);
-    void displayFrame(unsigned char *data, unsigned int length);
+    void displayFrame(QImage jpgImage);
 };
 
 #endif // CAMERASOURCE_H

@@ -26,7 +26,7 @@ Rectangle {
 
     WebView {
         id: navigationView
-        x: 44
+        x: 0
         y: 259
         url: "google_maps.html"
 //        url: "http://www.ya.ru"
@@ -66,8 +66,8 @@ Rectangle {
 
     Canvas {
         id: outboardDisplayCanvas
-        x: 379
-        y: 19
+        x: 421
+        y: 0
         width: 279
         height: 238
         property int tangageAngle: 8 //  in range [-180, 180]
@@ -223,10 +223,10 @@ Rectangle {
 
     Canvas {
         id: heightCanvas
-        x: 316
-        y: 279
+        x: 294
+        y: 352
         width: 70
-        height: 200
+        height: 148
         property int currentHeight: 323
         onPaint: {
             var ctx = heightCanvas.getContext('2d')
@@ -294,8 +294,8 @@ Rectangle {
 
     Canvas {
         id: compassCanvas
-        x: 386
-        y: 358
+        x: 397
+        y: 386
         width: 279
         height: 81
         property int curDirection: 0
@@ -423,8 +423,8 @@ Rectangle {
 
     Label {
         id: labelFPS
-        x: 406
-        y: 295
+        x: 430
+        y: 328
         width: 212
         height: 17
         text: ""
@@ -435,8 +435,8 @@ Rectangle {
 
     Slider {
         id: sliderFPS
-        x: 406
-        y: 312
+        x: 430
+        y: 345
         width: 212
         height: 22
         orientation: 1
@@ -460,8 +460,8 @@ Rectangle {
 
     VideoOutput {
         id: canvasCamera
-        x: 44
-        y: 19
+        x: 0
+        y: 0
         width: 320
         height: 240
         source: sourceCamera
@@ -469,8 +469,8 @@ Rectangle {
 
     Slider {
         id: slider__horizontal_1
-        x: 412
-        y: 446
+        x: 433
+        y: 472
         value: 45
         tickmarksEnabled: true
         stepSize: 1
@@ -478,6 +478,42 @@ Rectangle {
         onValueChanged: {
             compassCanvas.curDirection = value
             compassCanvas.requestPaint()
+        }
+    }
+
+    TextField {
+        id: textRPiURL
+        x: 397
+        y: 256
+        width: 209
+        height: 25
+        text: "remm.broker.freenet6.net"
+        placeholderText: "Text Field"
+    }
+
+    TextField {
+        id: textRPiPort
+        x: 397
+        y: 287
+        width: 68
+        height: 25
+        text: "9512"
+        placeholderText: "Text Field"
+    }
+
+    Button {
+        id: buttonConnectRPi
+        x: 488
+        y: 287
+        width: 118
+        height: 27
+        text: "Connect"
+        opacity: 1
+        smooth: false
+        checkable: false
+        checked: false
+        onClicked: {
+            connectRPi.tryDirectConnectToRPi(textRPiURL.text, Number(textRPiPort.text))
         }
     }
 }

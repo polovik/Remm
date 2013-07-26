@@ -1,92 +1,29 @@
-#include <signal.h>
 #include <QObject>
 #include <QDir>
 #include <QGuiApplication>
 #include <QQmlEngine>
 #include <QQuickView>
 #include <QQmlContext>
-#include "../connection.h"
-#include "../packet.h"
+#include "connection.h"
 #include "camerasource.h"
+#include "mainwindow.h"
 
 QQmlContext *context = NULL;
 CameraSource *cameraSource = NULL;
+Connection *connection = NULL;
+MainWindow *mainWindow = NULL;
 
-class CallableClass : public QObject
-{
-    Q_OBJECT
+//static int connection_established = 0;
 
-public:
-    CallableClass(QObject *parent = 0);
-    virtual ~CallableClass() {}
-
-public slots:
-    void cppMethod();
-};
-
-CallableClass::CallableClass(QObject *parent) : QObject(parent)
-{
-}
-
-void CallableClass::cppMethod()
-{
-    qDebug("C++ method called!");
-    context->setContextProperty("capturedFrame", QString("next.png"));
-}
-
-static int connection_established = 0;
-static status_packet_s last_status;
-
-void start_communicate()
-{
-    printf("INFO  %s() Connection is established.\n", __FUNCTION__);
-    connection_established = 1;
-}
-
-void data_rx(unsigned char *data, unsigned int length)
-{
-    status_packet_s *status_packet;
-
-    if (length != sizeof(status_packet_s)) {
-        printf("ERROR %s() Unexpected packet size %d: %.*s\n", __FUNCTION__, length, length, data);
-        return;
-    }
-    status_packet = (status_packet_s *)data;
-    if (status_packet->magic != MAGIC_STATUS) {
-        printf("ERROR %s() Unexpected packet type %d: %.*s\n", __FUNCTION__, status_packet->magic, length, data);
-        return;
-    }
-
-    memcpy(&last_status, status_packet, sizeof(status_packet_s));
-    printf("INFO  %s() height=%d, direction=%d, gps_latitude=%f, gps_longitude=%f, "
-            "slope=%d, battery_charge=%d, info=%s.\n", __FUNCTION__,
-            status_packet->height, status_packet->direction, status_packet->gps_latitude,
-            status_packet->gps_longitude, status_packet->slope, status_packet->battery_charge, status_packet->info);
-}
-
-void picture_rx(unsigned char *data, unsigned int length)
-{
-    printf("INFO  %s() Picture has just received.\n", __FUNCTION__);
-
-    if ((length == 0) || (data == NULL)) {
-        printf("ERROR %s() Incorrect arguments data=0x%X, length=%d\n", __FUNCTION__, (unsigned int)data, length);
-        return;
-    }
-
-    if (cameraSource != NULL)
-        cameraSource->displayFrame(data, length);
-
-    char filename[] = "captured.jpg";
-    FILE *file = fopen(filename, "wb");
-    fwrite(data, 1, length, file);
-    fclose(file);
-}
+//void start_communicate()
+//{
+//    printf("INFO  %s() Connection is established.\n", __FUNCTION__);
+//    connection_established = 1;
+//}
 
 void destroy_connection(int signum)
 {
     printf("INFO  %s() Destroy connection. signum=%d\n", __FUNCTION__, signum);
-//	release_display();
-    icedemo_destroy_instance(signum);
     exit(0);
 }
 
@@ -95,12 +32,6 @@ int main(int argc, char* argv[])
     QGuiApplication app(argc,argv);
     QQuickView view;
     view.connect(view.engine(), SIGNAL(quit()), &app, SLOT(quit()));
-
-    // Register signal and signal handler
-    signal(SIGINT, destroy_connection);
-
-    if (start_connecting(SIDE_CLIENT) != 0)
-        destroy_connection(0);  //  Exit
 
     printf("INFO  %s() Enter in Main LOOP.\n", __FUNCTION__);
 /*    while (1) {
@@ -116,16 +47,17 @@ int main(int argc, char* argv[])
     }
     printf("INFO  %s() Exit from Main LOOP.\n", __FUNCTION__);
 */
-//    CallableClass *cl = new CallableClass();
+    mainWindow = new MainWindow();
     cameraSource = new CameraSource(QSize(640, 480));
+    connection = new Connection();
+    QObject::connect(connection, SIGNAL(pictureReceived(QImage)), cameraSource, SLOT(displayFrame(QImage)));
 
     context = view.rootContext();
-//    view.rootContext()->setContextProperty("cppObject", (QObject*)cl);
+//    view.rootContext()->setContextProperty("mainWindow", (QObject *)mainWindow);
+    view.rootContext()->setContextProperty("connectRPi", (QObject *)connection);
     context->setContextProperty("sourceCamera", (QObject *)cameraSource);
     view.setSource(QUrl("mainWindow.qml"));
     view.show();
 
     return app.exec();
 }
-
-#include "main.moc"

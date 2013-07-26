@@ -1,7 +1,7 @@
 SERVER=server
 
 ARM_ARCH=arm-unknown-linux-gnu
-ARM_CC=arm-linux-gnueabihf-gcc
+ARM_CC=arm-linux-gnueabihf-g++
 ARM_LDFLAGS=-lpthread -ldl -lstdc++ -L../OpenCV-2.3.1/raspberry/lib -L../wiringPi/wiringPi -L../nmealib/lib
 ARM_LIBS=-lm -lnsl -lrt -lpthread -lopencv_core -lopencv_highgui -lwiringPi -lnmea
 ARM_DEFINES=
