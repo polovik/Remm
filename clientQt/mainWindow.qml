@@ -33,25 +33,6 @@ Rectangle {
         height: 241
         objectName: "navigationView"
         enabled: false
-
-        Image {
-            id: imageZoom
-            x: 12
-            y: 12
-            width: 83
-            height: 26
-            source: "plus_minus.png"
-            MouseArea {
-                id: mouseAreaZoom
-                anchors.fill: parent
-                onClicked: {
-                    if (mouse.x < width / 2)
-                        console.log("Plus")
-                    else
-                        console.log("Minus")
-                }
-            }
-        }
     }
 
     Canvas {
@@ -441,6 +422,7 @@ Rectangle {
         onValueChanged: {
             var fps = Math.floor(value * 10) / 10
             labelFPS.updateLabel(fps)
+            connectRPi.send_command(fps)
         }
         Component.onCompleted: {
             value = 1
@@ -504,6 +486,25 @@ Rectangle {
         checked: false
         onClicked: {
             connectRPi.tryDirectConnectToRPi(textRPiURL.text, Number(textRPiPort.text))
+        }
+    }
+
+    Image {
+        id: imageZoom
+        x: 283
+        y: 259
+        width: 83
+        height: 26
+        source: "plus_minus.png"
+        MouseArea {
+            id: mouseAreaZoom
+            anchors.fill: parent
+            onClicked: {
+                if (mouse.x < width / 2)
+                    mainWindow.zoomMap(1)
+                else
+                    mainWindow.zoomMap(-1)
+            }
         }
     }
 }

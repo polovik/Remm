@@ -26,6 +26,7 @@ signals:
     
 public slots:
     void displayGPSposition(float Lat, float Lon);
+    void zoomMap(int zoom);
 };
 
 #endif // MAINWINDOW_H

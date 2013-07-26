@@ -20,3 +20,9 @@
 .cproject
 .project
 .settings/
+
+# Debug temporary directory
+*-Debug/
+
+# Qt user project file
+clientQt.pro.user

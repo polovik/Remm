@@ -15,7 +15,6 @@ private:
     void data_rx(unsigned char *data, unsigned int length);
     void picture_rx(unsigned char *data, unsigned int length);
     int picture_assembly(unsigned char *data, unsigned int length);
-    void send_command();
 
     QUdpSocket *udpSocket;
 
@@ -26,6 +25,7 @@ signals:
 public slots:
     void tryDirectConnectToRPi(QString address, quint16 port);
     void startCommunicate();
+    void send_command(float fps);
 
 private slots:
     void udpError(QAbstractSocket::SocketError error);

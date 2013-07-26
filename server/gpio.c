@@ -122,7 +122,7 @@ void *rgb_control(void *arg)
 					led_turned_on = 1;
 					add_timer(20, &expiry_time);
 				} else {
-					rgb_mode = RGB_GREEN;
+					rgb_mode = RGB_OFF;
 				}
 			}
 		}

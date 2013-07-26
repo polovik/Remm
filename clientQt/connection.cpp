@@ -22,14 +22,13 @@ void Connection::tryDirectConnectToRPi(QString address, quint16 port)
 {
     udpSocket->close();
     udpSocket->connectToHost(address, port);
-    emit gpsPosReceived(20, 20);
 }
 
 void Connection::startCommunicate()
 {
     qDebug() << typeid(*this).name() << ":" << __FUNCTION__ << "()";
     udpSocket->write("Hello!");
-    send_command();
+    send_command(1.0);
 //    qDebug() << __PRETTY_FUNCTION__;
 }
 
@@ -62,16 +61,16 @@ void Connection::data_rx(unsigned char *data, unsigned int length)
     }
 
     memcpy(&last_status, status_packet, sizeof(status_packet_s));
-    qDebug("INFO  %s() height=%d, direction=%d, gps_latitude=%f, gps_longitude=%f, "
-            "slope=%d, battery_charge=%d, info=%s.", __FUNCTION__,
-            status_packet->height, status_packet->direction, status_packet->gps_latitude,
-            status_packet->gps_longitude, status_packet->slope, status_packet->battery_charge, status_packet->info);
+//    qDebug("INFO  %s() height=%d, direction=%d, gps_latitude=%f, gps_longitude=%f, "
+//            "slope=%d, battery_charge=%d, info=%s.", __FUNCTION__,
+//            status_packet->height, status_packet->direction, status_packet->gps_latitude,
+//            status_packet->gps_longitude, status_packet->slope, status_packet->battery_charge, status_packet->info);
     emit gpsPosReceived(status_packet->gps_latitude, status_packet->gps_longitude);
 }
 
 void Connection::picture_rx(unsigned char *data, unsigned int length)
 {
-    qDebug("INFO  %s() Picture has just received.", __FUNCTION__);
+//    qDebug("INFO  %s() Picture has just received.", __FUNCTION__);
 
     if ((length == 0) || (data == NULL)) {
         qDebug("ERROR %s() Incorrect arguments data=0x%X, length=%d", __FUNCTION__, (unsigned int)data, length);
@@ -108,7 +107,7 @@ int Connection::picture_assembly(unsigned char *data, unsigned int length)
     if (packet->picture_id > prev_packet.picture_id) {
         picture_rx(picture, prev_packet.picture_size);
         free(picture);
-        qDebug("INFO  %s() Start receiving new picture %d.", __FUNCTION__, packet->picture_id);
+//        qDebug("INFO  %s() Start receiving new picture %d.", __FUNCTION__, packet->picture_id);
         prev_packet = *packet;
         picture = (unsigned char *)malloc(packet->picture_size);
     }
@@ -150,7 +149,7 @@ void Connection::readPendingDatagram()
     delete[] data;
 }
 
-void Connection::send_command()
+void Connection::send_command(float fps)
 {
     control_packet_s control_packet;
 
@@ -160,7 +159,7 @@ void Connection::send_command()
     control_packet.gps_latitude = 16.22;
     control_packet.gps_longitude = 15.44;
     control_packet.slope = 0;
-    control_packet.capture_fps = 1.0;
+    control_packet.capture_fps = fps;
     control_packet.command = AUTOPILOT_OFF;
     int sended = udpSocket->write((char *)&control_packet, sizeof(control_packet_s));
     qDebug() << "send_command()" << sizeof(control_packet_s) << sended;

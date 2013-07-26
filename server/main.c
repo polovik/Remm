@@ -81,6 +81,7 @@ void *command_rx(void *arg)
 			continue;
 		}
 
+		set_rgb_led_mode(RGB_GREEN_SINGLE_SHOT);
 		if (bytes_read != sizeof(control_packet_s)) {
 			printf("ERROR %s() Unexpected packet size %d: %.*s\n", __FUNCTION__, bytes_read, bytes_read, data);
 			continue;
@@ -231,6 +232,7 @@ int main(int argc, char *argv[])
 	}
 
     printf("INFO  %s() Enter in Main LOOP\n", __FUNCTION__);
+	set_rgb_led_mode(RGB_RED_BLINKING);
 	while (1) {
 		usleep(100 * 1000);
 		if (exit_thread == 1)
@@ -266,7 +268,7 @@ int main(int argc, char *argv[])
 			status_packet.battery_charge = get_battery_charge();
 			errno = 0;
 			//	TODO Add correct working with socket - add mutex and move to separate thread
-			ret = sendto(udp_socket, &status_packet, sizeof(status_packet_s), MSG_DONTWAIT,
+			ret = sendto(udp_socket, &status_packet, sizeof(status_packet_s), 0,
 						 (struct sockaddr *)&client_udp_addr, sizeof(client_udp_addr));
 			if (ret < 0) {
 				if (errno == EAGAIN) {
@@ -274,7 +276,6 @@ int main(int argc, char *argv[])
 				} else {
 					perror("Sending status through UDP socket");
 				}
-				continue;
 			}
 			add_timer(STATUS_PACKET_TIMEOUT, &server_ctx.send_status_timer);
 		}

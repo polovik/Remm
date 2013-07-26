@@ -22,8 +22,17 @@ void MainWindow::displayGPSposition(float Lat, float Lon)
         qCritical("%s::%s() Can't get access to GoogleMaps view", typeid(*this).name(), __FUNCTION__ );
         return;
     }
-    qDebug("%s::%s() Lat:%f, Lon:%f", typeid(*this).name(), __FUNCTION__ , Lat, Lon);
     QString javaScript = QString("display_current_position(%1, %2)").arg(Lat).arg(Lon);
+    webView->runJavaScriptInMainFrame(javaScript, NULL, NULL);
+}
+
+void MainWindow::zoomMap(int zoom)
+{
+    if (webView == NULL) {
+        qCritical("%s::%s() Can't get access to GoogleMaps view", typeid(*this).name(), __FUNCTION__ );
+        return;
+    }
+    QString javaScript = QString("zoomMap(%1)").arg(zoom);
     webView->runJavaScriptInMainFrame(javaScript, NULL, NULL);
 }
 
@@ -52,6 +61,7 @@ void MainWindow::showQmlView(QGuiApplication *app)
 
     QQmlContext *qmlContext = qmlView->rootContext();
     qmlContext->setContextProperty("connectRPi", (QObject *)connection);
+    qmlContext->setContextProperty("mainWindow", (QObject *)this);
     qmlContext->setContextProperty("sourceCamera", (QObject *)cameraSource);
     qmlView->setSource(QUrl("mainWindow.qml"));
 
