@@ -9,7 +9,7 @@
 #include <unistd.h>
 #include "gpio.h"
 #include "wiringPi.h"
-#include "../utils.h"
+#include "utils.h"
 
 //	BUTTON_CONNECT connected to P5-04 pin (GPIO 29).
 #define BUTTON_GPIO	29
