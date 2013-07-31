@@ -63,7 +63,7 @@ void MainWindow::showQmlView(QGuiApplication *app)
     qmlContext->setContextProperty("connectRPi", (QObject *)connection);
     qmlContext->setContextProperty("mainWindow", (QObject *)this);
     qmlContext->setContextProperty("sourceCamera", (QObject *)cameraSource);
-    qmlView->setSource(QUrl("mainWindow.qml"));
+    qmlView->setSource(QUrl("MainWindow.qml"));
 
     webView = qmlView->rootObject()->findChild<QQuickWebView *>("navigationView");
     if (webView == NULL) {

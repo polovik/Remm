@@ -12,5 +12,8 @@ HEADERS += camerasource.h ../packet.h connection.h \
 
 RESOURCES +=
 
-OTHER_FILES = mainWindow.qml google_maps.html ../connect.cgi ../README.md
+OTHER_FILES = google_maps.html ../connect.cgi ../README.md \
+    Settings.qml \
+    ControlPanel.qml \
+    MainWindow.qml
 
