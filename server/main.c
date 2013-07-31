@@ -221,7 +221,7 @@ int main(int argc, char *argv[])
 
 	init_gps();
 
-	if (init_camera() != 0)
+	if (init_camera(640, 480) != 1)
 		server_ctx.camera_broken = 1;
 
 	exit_thread = 0;

@@ -2,10 +2,10 @@ SERVER=server
 
 ARM_ARCH=arm-unknown-linux-gnu
 ARM_CC=arm-linux-gnueabihf-g++
-ARM_LDFLAGS=-lpthread -ldl -lstdc++ -L../OpenCV-2.3.1/raspberry/lib -L../wiringPi/wiringPi -L../nmealib/lib
-ARM_LIBS=-lm -lnsl -lrt -lpthread -lopencv_core -lopencv_highgui -lwiringPi -lnmea
+ARM_LDFLAGS=-lpthread -ldl -lstdc++ -L../wiringPi/wiringPi -L../nmealib/lib -L../jpeg-9/.libs -L../v4l-utils-0.9.5/lib/libv4l2/.libs -L../v4l-utils-0.9.5/lib/libv4lconvert/.libs
+ARM_LIBS=-lm -lnsl -lrt -lpthread -lwiringPi -lnmea -ljpeg -lv4l2 -lv4lconvert
 ARM_DEFINES=
-ARM_CFLAGS=-g -Wall $(ARM_DEFINES) -I../OpenCV-2.3.1/modules/core/include -I../OpenCV-2.3.1/modules/highgui/include -I../wiringPi/wiringPi -I../nmealib/include
+ARM_CFLAGS=-g -Wall $(ARM_DEFINES) -I../jpeg-9/ -I../v4l-utils-0.9.5/lib/include -I../wiringPi/wiringPi -I../nmealib/include
 
 all:
 	echo ***ARM***
