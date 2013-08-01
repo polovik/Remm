@@ -13,13 +13,14 @@
 #include <signal.h>
 #include <errno.h>
 #include <sys/mman.h>
+#include <sys/ioctl.h>
 #include <linux/videodev2.h>
 #include <libv4l2.h>
 #include <jpeglib.h>
 #include "camera.h"
 
 #define CAMERA_DEV_NAME	 "/dev/video0"
-#define MAX_RAW_IMAGE_SIZE	(640 * 480 * 3)
+#define MAX_RAW_IMAGE_SIZE	(320 * 240 * 3)
 
 typedef struct {
     void   *start;
@@ -54,12 +55,22 @@ static int xioctl(int request, void *arg)
     	return 0;
     }
 
-    do {
-        ret = v4l2_ioctl(camera_ctx.fd, request, arg);
-    } while ((ret == -1) && ((errno == EINTR) || (errno == EAGAIN)));
+lab_ioctl:
+	ret = v4l2_ioctl(camera_ctx.fd, request, arg); //v4l2_ioctl
+    if ((ret == -1) && (errno = EINTR)) {
+//    	printf("ERROR %s() EINTR error ioctl(0x%08X) error %d, %s\n", __FUNCTION__,
+//    			request, errno, strerror(errno));
+//    	usleep(1 * 1000);
+    	goto lab_ioctl;
+    }
+    if ((ret == -1) && (errno = EAGAIN)) {
+    	printf("ERROR %s() EAGAIN error ioctl(0x%08X) error %d, %s\n", __FUNCTION__,
+    			request, errno, strerror(errno));
+    	return 0;
+    }
 
     if (ret == -1) {
-    	printf("ERROR %s() V4L2 ioctl(%d) error %d, %s\n", __FUNCTION__,
+    	printf("ERROR %s() V4L2 ioctl(0x%08X) error %d, %s\n", __FUNCTION__,
     			request, errno, strerror(errno));
         ret = 0;
     } else
@@ -177,76 +188,62 @@ void get_frame(unsigned char frame[MAX_JPEG_IMAGE_SIZE], int *size)
 	pthread_mutex_unlock(&camera_ctx.image_copy_mutex);
 }
 
-void *grab_pictures(void *arg)
+void grab_picture()
 {
     struct v4l2_buffer mmap_buf;
-    enum v4l2_buf_type type;
     fd_set fds;
     struct timeval tv;
     int ret;
-//	long long elapsed;
 
-    type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    ret = xioctl(VIDIOC_STREAMON, &type);
-    if (ret != 1) {
-    	printf("ERROR %s() Can't start video streaming./n", __FUNCTION__);
-    	camera_ctx.thread_aborted = 1;
-        return 0;
-    }
-    printf("INFO  %s() Start capturing.\n", __FUNCTION__);
-
-	while (camera_ctx.thread_aborted == 0) {
-        /* Perform select with timeout 1sec */
-        do {
-            memset(&fds, 0x00, sizeof(fds));
-            FD_SET(camera_ctx.fd, &fds);
-            tv.tv_sec = 1;
-            tv.tv_usec = 0;
-            ret = select(camera_ctx.fd + 1, &fds, NULL, NULL, &tv);
-        } while ((ret == -1) && (errno = EINTR));
-        if (ret == -1) {
-            perror("Camera select");
-            printf("ERROR %s() Can't get access to camera/n", __FUNCTION__);
-            break;
-        }
-
-        /*	Retreive frame	*/
-        memset(&mmap_buf, 0x00, sizeof(mmap_buf));
-        mmap_buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-        mmap_buf.memory = V4L2_MEMORY_MMAP;
-        ret = xioctl(VIDIOC_DQBUF, &mmap_buf);
-        if (ret != 1) {
-            printf("ERROR %s() Can't query MMAP buffer./n", __FUNCTION__);
-            break;
-        }
-
-//		gettimeofday(&tv, NULL);
-//		elapsed = tv.tv_sec * 1000000 + tv.tv_usec;
-//		gettimeofday(&tv, NULL);
-//		elapsed = tv.tv_sec * 1000000 + tv.tv_usec - elapsed;
-//		printf("INFO  %s() Captured %d. Elapsed %lld us.\n", __FUNCTION__, counter, elapsed);
-
-		pthread_mutex_lock(&camera_ctx.image_copy_mutex);
-		if (mmap_buf.length != MAX_RAW_IMAGE_SIZE) {
-			printf("ERROR %s()Incorrect size of MMAP buffer = %d. Should be %d/n",
-					__FUNCTION__, mmap_buf.length, MAX_RAW_IMAGE_SIZE);
-			pthread_mutex_unlock(&camera_ctx.image_copy_mutex);
-			break;
-		}
-		camera_ctx.image_length = mmap_buf.length;
-		memcpy(camera_ctx.raw_image, (unsigned char *)camera_ctx.buffers[mmap_buf.index].start, camera_ctx.image_length);
-		pthread_mutex_unlock(&camera_ctx.image_copy_mutex);
-
-		/*	Release MMAP buffer	*/
-        ret = xioctl(VIDIOC_QBUF, &mmap_buf);
-        if (ret != 1) {
-        	printf("ERROR %s() Can't release MMAP buffer./n", __FUNCTION__);
-        	break;
-        }
+	/* Perform select with timeout 1sec */
+    if (camera_ctx.fd <= 0)
+    	return;
+	memset(&fds, 0x00, sizeof(fds));
+	FD_SET(camera_ctx.fd, &fds);
+	tv.tv_sec = 1;
+	tv.tv_usec = 0;
+	ret = select(camera_ctx.fd + 1, &fds, NULL, NULL, &tv);
+	if ((ret == -1) && (errno = EINTR)) {
+		printf("ERROR %s() EINTR error on select camera fd\n", __FUNCTION__);
+		return;
 	}
-	printf("INFO  %s() Capturing is finished.\n", __FUNCTION__);
-	camera_ctx.thread_aborted = 1;
-	return 0;
+	if (ret == -1) {
+		perror("Camera select");
+		printf("ERROR %s() Can't get access to camera\n", __FUNCTION__);
+		return;
+	}
+
+	/*	Retrieve frame	*/
+	memset(&mmap_buf, 0x00, sizeof(mmap_buf));
+	mmap_buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+	mmap_buf.memory = V4L2_MEMORY_MMAP;
+	ret = xioctl(VIDIOC_DQBUF, &mmap_buf);
+	if (ret != 1) {
+		printf("ERROR %s() Can't query MMAP buffer.\n", __FUNCTION__);
+		return;
+	}
+
+//	pthread_mutex_lock(&camera_ctx.image_copy_mutex);
+//	if (mmap_buf.length != MAX_RAW_IMAGE_SIZE) {
+//		printf("ERROR %s() Incorrect size of MMAP buffer = %d. Should be %d\n",
+//				__FUNCTION__, mmap_buf.length, MAX_RAW_IMAGE_SIZE);
+//		pthread_mutex_unlock(&camera_ctx.image_copy_mutex);
+//		return;
+//	}
+	if (mmap_buf.bytesused != MAX_RAW_IMAGE_SIZE) {
+		printf("ERROR %s() Incorrect used size of MMAP buffer = %d. Should be %d\n",
+				__FUNCTION__, mmap_buf.bytesused, MAX_RAW_IMAGE_SIZE);
+	}
+	camera_ctx.image_length = mmap_buf.bytesused;
+	memcpy(camera_ctx.raw_image, (unsigned char *)camera_ctx.buffers[mmap_buf.index].start, camera_ctx.image_length);
+//	pthread_mutex_unlock(&camera_ctx.image_copy_mutex);
+
+	/*	Release MMAP buffer	*/
+	ret = xioctl(VIDIOC_QBUF, &mmap_buf);
+	if (ret != 1) {
+		printf("ERROR %s() Can't release MMAP buffer.\n", __FUNCTION__);
+		return;
+	}
 }
 
 int is_capture_aborted()
@@ -269,6 +266,7 @@ int init_camera(unsigned int width, unsigned int height)
     struct v4l2_format image_format;
     struct v4l2_requestbuffers access_format;
     struct v4l2_buffer mmap_buf;
+    enum v4l2_buf_type type;
 
 	memset(&camera_ctx, 0x00, sizeof(camera_ctx));
 	camera_ctx.thread_aborted = 1;
@@ -302,30 +300,31 @@ int init_camera(unsigned int width, unsigned int height)
         return 0;
     camera_ctx.width = width;
     camera_ctx.height = height;
-    camera_ctx.quality = 95;
+    camera_ctx.quality = 70;
     printf("INFO  %s() Frame size: %dx%d. Quality = %d\n", __FUNCTION__, width, height, camera_ctx.quality);
 
 //    struct v4l2_streamparm capture_param;
 //    capture_param.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-//    ret = xioctl(camera_fd, VIDIOC_G_PARM, &capture_param);
+//    ret = xioctl(VIDIOC_G_PARM, &capture_param);
 //    if (ret != 1)
 //        return 0;
-
+//
 //    if (!(capture_param.parm.capture.capability & V4L2_CAP_TIMEPERFRAME)) {
-//        qCritical("Can't set FPS to camera");
+//    	printf("ERROR %s() Can't set FPS to camera\n", __FUNCTION__);
 //        return 0;
 //    }
-//    qDebug("Get FPS: %d/%d", capture_param.parm.capture.timeperframe.numerator, capture_param.parm.capture.timeperframe.denominator);
-
+//    printf("INFO  %s() Get FPS: %d/%d\n", __FUNCTION__, capture_param.parm.capture.timeperframe.numerator, capture_param.parm.capture.timeperframe.denominator);
+//
 //    capture_param.parm.capture.timeperframe.denominator = 1;
-//    ret = xioctl(camera_fd, VIDIOC_S_PARM, &capture_param);
+//    ret = xioctl(VIDIOC_S_PARM, &capture_param);
 //    if (ret != 1)
 //        return 0;
-//    qDebug("Set FPS: %d/%d", capture_param.parm.capture.timeperframe.numerator, capture_param.parm.capture.timeperframe.denominator);
-	get_v4l2_Control(V4L2_CID_EXPOSURE);
-	get_v4l2_Control(V4L2_CID_EXPOSURE_AUTO);
-	get_v4l2_Control(V4L2_CID_EXPOSURE_ABSOLUTE);
-	get_v4l2_Control(V4L2_CID_EXPOSURE_AUTO_PRIORITY);
+//    printf("INFO  %s() Set FPS: %d/%d\n", __FUNCTION__, capture_param.parm.capture.timeperframe.numerator, capture_param.parm.capture.timeperframe.denominator);
+//
+//	get_v4l2_Control(V4L2_CID_EXPOSURE);
+//	get_v4l2_Control(V4L2_CID_EXPOSURE_AUTO);
+//	get_v4l2_Control(V4L2_CID_EXPOSURE_ABSOLUTE);
+//	get_v4l2_Control(V4L2_CID_EXPOSURE_AUTO_PRIORITY);
 
     /*  Set MMAP access to camera frames    */
 	memset(&access_format, 0x00, sizeof(access_format));
@@ -374,14 +373,23 @@ int init_camera(unsigned int width, unsigned int height)
 		perror("Creating mutex on image copy");
 		return 0;
 	}
-	ret = pthread_create(&camera_ctx.grabbing_thread, NULL, grab_pictures, NULL);
-	if (ret != 0) {
-		perror("Starting grabbing thread");
-		return 0;
-	}
+//	ret = pthread_create(&camera_ctx.grabbing_thread, NULL, grab_pictures, NULL);
+//	if (ret != 0) {
+//		perror("Starting grabbing thread");
+//		return 0;
+//	}
 
 	printf("INFO  %s() Camera is successfully inited.\n", __FUNCTION__);
-	camera_ctx.thread_aborted = 0;
+
+    type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+    ret = xioctl(VIDIOC_STREAMON, &type);
+    if (ret != 1) {
+    	printf("ERROR %s() Can't start video streaming.\n", __FUNCTION__);
+    	camera_ctx.thread_aborted = 1;
+        return 0;
+    }
+    printf("INFO  %s() Start capturing.\n", __FUNCTION__);
+    camera_ctx.thread_aborted = 0;
 	return 1;
 }
 
@@ -396,9 +404,9 @@ void release_camera(int signum)
 	if (camera_ctx.fd <= 0)
 		return;
 
-	if (pthread_join(camera_ctx.grabbing_thread, NULL) != 0) {
-		perror("Joining to grabbing_thread");
-	}
+//	if (pthread_join(camera_ctx.grabbing_thread, NULL) != 0) {
+//		perror("Joining to grabbing_thread");
+//	}
 	if (pthread_mutex_destroy(&camera_ctx.image_copy_mutex) != 0) {
 		perror("Destroying mutex image_copy_mutex");
 	}
@@ -406,7 +414,7 @@ void release_camera(int signum)
     type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
     ret = xioctl(VIDIOC_STREAMOFF, &type);
     if (ret != 1) {
-    	printf("ERROR %s() Can't turn off camera streaming./n", __FUNCTION__);
+    	printf("ERROR %s() Can't turn off camera streaming.\n", __FUNCTION__);
     }
 
     for (i = 0; i < camera_ctx.buffers_count; ++i)

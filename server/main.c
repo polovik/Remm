@@ -80,10 +80,13 @@ void *command_rx(void *arg)
     udp_ipv4_addr.sin_addr.s_addr = htonl(INADDR_ANY);
     if (bind(udp_ipv4_socket, (struct sockaddr *)&udp_ipv4_addr, sizeof(udp_ipv4_addr)) < 0) {
         perror("Binding UDP IPv4 socket");
-        exit_thread = 1;	//	Exit from program
-        return 0;
+//        exit_thread = 1;	//	Exit from program
+//        return 0;
+        udp_ipv4_socket = -1;
+        goto udp_mainloop;
     }
 
+udp_mainloop:
     while (exit_thread == 0) {
 		usleep(1000 * 1000);
 
@@ -136,7 +139,7 @@ void *command_rx(void *arg)
 
 ipv4_check:
 		if (udp_ipv4_socket <= 0)
-			goto do_cmd;
+			continue;
 		addr_len = sizeof(remote_udp_ipv4_addr);
 		memset(data, 0x00, sizeof(data));
 		errno = 0;
@@ -206,10 +209,10 @@ static void send_datagram(void *data, size_t length)
 	errno = 0;
 	//	TODO Add correct working with socket - add mutex and move to separate thread
 	if (udp_ipv6_socket > 0) {
-		sended_bytes = sendto(udp_ipv6_socket, &data, length, 0,
+		sended_bytes = sendto(udp_ipv6_socket, data, length, 0,
 					   (struct sockaddr *)&client_udp_ipv6_addr, sizeof(client_udp_ipv6_addr));
 	} else if (udp_ipv4_socket > 0) {
-		sended_bytes = sendto(udp_ipv4_socket, &data, length, 0,
+		sended_bytes = sendto(udp_ipv4_socket, data, length, 0,
 					   (struct sockaddr *)&client_udp_ipv4_addr, sizeof(client_udp_ipv4_addr));
 	} else {
 		printf("ERROR %s() All UDP sockets are invalidated\n", __FUNCTION__);
@@ -297,7 +300,7 @@ int main(int argc, char *argv[])
 
 	init_gps();
 
-	if (init_camera(640, 480) != 1)
+	if (init_camera(320, 240) != 1)
 		server_ctx.camera_broken = 1;
 
 	exit_thread = 0;
@@ -311,6 +314,7 @@ int main(int argc, char *argv[])
 	set_rgb_led_mode(RGB_RED_BLINKING);
 	while (1) {
 		usleep(100 * 1000);
+		grab_picture();
 		if (exit_thread == 1)
 			break;
 

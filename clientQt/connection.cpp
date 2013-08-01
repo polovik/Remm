@@ -56,7 +56,7 @@ void Connection::data_rx(unsigned char *data, unsigned int length)
     }
     status_packet = (status_packet_s *)data;
     if (status_packet->magic != MAGIC_STATUS) {
-        qDebug("ERROR %s() Unexpected packet type %d: %.*s", __FUNCTION__, status_packet->magic, length, data);
+        qDebug("ERROR %s() Unexpected packet type 0x%08X: %.*s", __FUNCTION__, status_packet->magic, length, data);
         return;
     }
 
