@@ -21,6 +21,7 @@ typedef enum {
 //	http://stackoverflow.com/questions/900697/how-to-find-the-largest-udp-packet-i-can-send-without-fragmenting
 //	PJSIP_UDP_SIZE_THRESHOLD	1300
 #pragma pack(push, 1)
+
 typedef struct {
 	magic_e magic;
 	int picture_id;
@@ -52,6 +53,15 @@ typedef enum {
 	AUTOPILOT_KEEP_HEIGHT		= 0xFF
 } autopilot_command_e;
 
+/** Camera specific settings */
+typedef struct {
+    unsigned int width;
+    unsigned int height;
+    int quality;    /**<    JPEG quality in range [0...100] */
+    int exposure;   /**<    -1(Auto exposure), 0(Aperture priority), >0(Manual exposure) */
+    float fps;      /**<	0(turn off camera), [0.1 to 2] step=0.1, (2 to 10] step=1 */
+} camera_settings_s;
+
 /**	Sends from PC host. Contain control commands. */
 typedef struct {
 	magic_e magic;
@@ -60,9 +70,10 @@ typedef struct {
 	double gps_latitude;
 	double gps_longitude;
 	int slope;
-	float capture_fps;	/**<	0(turn off camera), [0.1 to 2] step=0.1, (2 to 10] step=1 */
+    camera_settings_s camera;
 	autopilot_command_e command;
 } control_packet_s;
+
 #pragma pack(pop)
 
 #endif /* PACKET_H_ */

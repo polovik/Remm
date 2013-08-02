@@ -5,23 +5,21 @@ Item {
     width: 600
     height: 600
     signal connectionEstablished()
+
     Rectangle {
-        id: rectangle1
+        id: rectangle_address
+        color: "yellowgreen"
         x: 0
         y: 0
-        color: "yellowgreen"
-        anchors.rightMargin: 0
-        anchors.bottomMargin: 0
-        anchors.leftMargin: 0
-        anchors.topMargin: 0
-        anchors.fill: parent
+        height: parent.height / 3
+        width: parent.width
 
         ExclusiveGroup { id: groupConnectionType }
 
         RadioButton {
             id: radio_button_IPv6
             anchors.top: parent.top
-            anchors.topMargin: (parent.height - height) / 3
+            anchors.topMargin: parent.height / 5
             anchors.left: parent.left
             anchors.leftMargin: (parent.width - width - text_IPv6_RPi_URL.width) / 3
             text: "IPv6(conection over 3G Internet)"
@@ -44,17 +42,13 @@ Item {
             text: "remm.broker.freenet6.net"
             enabled: false
             visible: true
-//                anchors.top: parent.top
-//                anchors.topMargin: (parent.height - height) / 2
-//                anchors.left: parent.left
-//                anchors.leftMargin: (parent.width - width) / 2
             placeholderText: ""
         }
 
         RadioButton {
             id: radio_button_IPv4
             anchors.top: radio_button_IPv6.bottom
-            anchors.topMargin: 50
+            anchors.topMargin: 30
             anchors.left: radio_button_IPv6.left
             text: "IPv4(direct Ethernet connection)"
             checked: true
@@ -79,9 +73,8 @@ Item {
 
         Label {
             id: label_Port
-            anchors.top: parent.top
-            anchors.topMargin: (parent.height - height) / 3 * 2
-            anchors.left: buttonConnectRPi.left
+            x: (parent.width - width - textRPiPort.width - 20) / 2
+            y: (parent.height - height) / 5 * 4
             text: "Port:"
         }
 
@@ -89,12 +82,116 @@ Item {
             id: textRPiPort
             width: 68
             height: 25
+            x: label_Port.x + label_Port.width + 20
             anchors.verticalCenter: label_Port.verticalCenter
-            anchors.right: buttonConnectRPi.right
             text: "9512"
             readOnly: true
             placeholderText: "Text Field"
         }
+
+        Label {
+            id: label_address
+            x: -30
+            anchors.verticalCenter: parent.verticalCenter
+            text: "Address"
+            font.bold: true
+            font.family: "Courier New"
+            font.pointSize: 21
+            rotation: -90
+        }
+
+    }
+
+    Rectangle {
+        id: rectangle_camera
+        color: "#e49023"
+        anchors.top: rectangle_address.bottom
+        height: parent.height / 3
+        width: parent.width
+
+        Label {
+            id: label_resolution
+            x: 63
+            y: 120
+            text: "Resolution:"
+        }
+
+        ComboBox {
+            id: combo_resolution
+            x: 63
+            y: 137
+            model: ListModel {
+                id: modes
+                ListElement { text: "960x720"; horRes: 960; verRes: 720 }
+                ListElement { text: "640x480"; horRes: 640; verRes: 480 }
+                ListElement { text: "320x240"; horRes: 320; verRes: 240 }
+                ListElement { text: "160x120"; horRes: 160; verRes: 120 }
+            }
+            currentIndex: 2
+        }
+
+        Label {
+            id: label_exposure
+            x: 243
+            y: 41
+            text: "Exposure:"
+        }
+
+        Slider {
+            id: slider_exposure
+            x: 232
+            y: 120
+            value: 100
+            stepSize: 10
+            maximumValue: 1000
+        }
+
+        ComboBox {
+            id: combo_exposure
+            x: 243
+            y: 83
+            model: [ "Auto", "Manual", "Shutter", "Aperture" ]
+            currentIndex: 0
+            onCurrentIndexChanged: {
+                if (currentIndex == 0)
+                    slider_exposure.enabled = false
+            }
+        }
+
+        Label {
+            id: label_quality
+            x: 257
+            y: 164
+            text: "Quality:"
+        }
+        Slider {
+            id: slider_quality
+            x: 343
+            y: 164
+            tickmarksEnabled: false
+            value: 70
+            stepSize: 1
+            maximumValue: 100
+        }
+
+        Label {
+            id: label_camera
+            x: -25
+            anchors.verticalCenter: parent.verticalCenter
+            text: "Camera"
+            font.bold: true
+            font.family: "Courier New"
+            font.pointSize: 21
+            rotation: -90
+        }
+    }
+
+    Rectangle {
+        id: rectangle_connect
+        anchors.top: rectangle_camera.bottom
+        height: parent.height / 3
+        width: parent.width
+        color: "#2da5c6"
 
         Button {
             id: buttonConnectRPi
@@ -115,6 +212,5 @@ Item {
                     connectRPi.tryDirectConnectToRPi(text_IPv4_RPi_IP.text, Number(textRPiPort.text))
             }
         }
-
     }
 }
