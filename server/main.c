@@ -83,10 +83,8 @@ void *command_rx(void *arg)
 //        exit_thread = 1;	//	Exit from program
 //        return 0;
         udp_ipv4_socket = -1;
-        goto udp_mainloop;
     }
 
-udp_mainloop:
     while (exit_thread == 0) {
 		usleep(1000 * 1000);
 
@@ -314,7 +312,6 @@ int main(int argc, char *argv[])
 	set_rgb_led_mode(RGB_RED_BLINKING);
 	while (1) {
 		usleep(100 * 1000);
-		grab_picture();
 		if (exit_thread == 1)
 			break;
 
