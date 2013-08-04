@@ -6,6 +6,8 @@ import QtMultimedia 5.0
 Item {
     width: 700
     height: 500
+    signal tryChangeSettings()
+
     Rectangle {
         anchors.fill: parent
         color: "#525c51"
@@ -269,6 +271,9 @@ Item {
             height: 81
             property int curDirection: 0
             property int expectedDirection: 0
+            onExpectedDirectionChanged: {
+                connectRPi.updatePosition(expectedDirection)
+            }
             onPaint: {
                 var ctx = compassCanvas.getContext('2d')
                 var directionArrowHeight = height * 0.1
@@ -418,7 +423,7 @@ Item {
             onValueChanged: {
                 var fps = Math.floor(value * 10) / 10
                 labelFPS.updateLabel(fps)
-                connectRPi.send_command(fps)
+                connectRPi.updateCameraSettings(fps)
             }
             Component.onCompleted: {
                 value = 1
@@ -466,6 +471,15 @@ Item {
                         mainWindow.zoomMap(-1)
                 }
             }
+        }
+
+        Button {
+            id: button_settings
+            x: 518
+            y: 259
+            text: "Settings"
+            onClicked:
+                tryChangeSettings()
         }
     }
 }

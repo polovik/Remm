@@ -23,8 +23,6 @@
 typedef struct {
 	int connection_established;
 	int camera_broken;
-	float capture_fps;
-	struct timeval send_frame_timer;
 	struct timeval send_status_timer;
 	/*	Position	*/
 	int height;		/**<	Height above ground */
@@ -129,8 +127,6 @@ void *command_rx(void *arg)
 			printf("INFO  %s() Connection IPv6 established\n", __FUNCTION__);
 			server_ctx.connection_established = 1;
 			memcpy(&client_udp_ipv6_addr, &remote_udp_ipv6_addr, sizeof(client_udp_ipv6_addr));
-			unsigned int timeout = 1000. / server_ctx.capture_fps;
-			add_timer(timeout, &server_ctx.send_frame_timer);
 			add_timer(STATUS_PACKET_TIMEOUT, &server_ctx.send_status_timer);
 		}
 		goto do_cmd;
@@ -175,8 +171,6 @@ ipv4_check:
 			printf("INFO  %s() Connection IPv4 established\n", __FUNCTION__);
 			server_ctx.connection_established = 1;
 			memcpy(&client_udp_ipv4_addr, &remote_udp_ipv4_addr, sizeof(client_udp_ipv4_addr));
-			unsigned int timeout = 1000. / server_ctx.capture_fps;
-			add_timer(timeout, &server_ctx.send_frame_timer);
 			add_timer(STATUS_PACKET_TIMEOUT, &server_ctx.send_status_timer);
 		}
 
@@ -184,16 +178,7 @@ do_cmd:
 		server_ctx.height = control_packet->height;
 		server_ctx.direction = control_packet->direction;
 		server_ctx.slope = control_packet->slope;
-
-		float fps = control_packet->capture_fps;
-		if (fps != server_ctx.capture_fps) {
-			printf("INFO  %s() Chosen new FPS rate=%f\n", __FUNCTION__, fps);
-			server_ctx.capture_fps = fps;
-			if (server_ctx.capture_fps > 0) {
-				unsigned int timeout = 1000. / server_ctx.capture_fps;
-				add_timer(timeout, &server_ctx.send_frame_timer);
-			}
-		}
+        update_camera_settings(&control_packet->camera);
     }
 	printf("INFO  %s() Receiving commands is finished.\n", __FUNCTION__);
     exit_thread = 1;	//	Exit from program
@@ -279,15 +264,11 @@ void destroy_connection(int signum)
 
 int main(int argc, char *argv[])
 {
-	unsigned char frame[MAX_JPEG_IMAGE_SIZE];
-	int size;
 	status_packet_s status_packet;
 	int ret;
 
 	status_packet.magic = MAGIC_STATUS;
 	memset(&server_ctx, 0x00, sizeof(server_ctx_s));
-	server_ctx.capture_fps = 0.5;
-	timerclear(&server_ctx.send_frame_timer);
 	timerclear(&server_ctx.send_status_timer);
 
     // Register signal and signal handler
@@ -297,9 +278,6 @@ int main(int argc, char *argv[])
     	return 1;
 
 	init_gps();
-
-	if (init_camera(320, 240) != 1)
-		server_ctx.camera_broken = 1;
 
 	exit_thread = 0;
 	ret = pthread_create(&command_rx_thread, NULL, command_rx, NULL);
@@ -318,19 +296,6 @@ int main(int argc, char *argv[])
 		if (server_ctx.connection_established != 1)
 			continue;
 
-		/*	Send captured frame	*/
-		if (is_timer_expired(&server_ctx.send_frame_timer)) {
-			if (is_capture_aborted() != 0) {
-				server_ctx.camera_broken = 1;
-				memset(status_packet.info, 0x00, sizeof(status_packet.info));
-				sprintf(status_packet.info, "Camera is broken");
-			} else if (server_ctx.capture_fps > 0) {
-				get_frame(frame, &size);
-				send_picture(frame, size);
-				unsigned int timeout = 1000. / server_ctx.capture_fps;
-				add_timer(timeout, &server_ctx.send_frame_timer);
-			}
-		}
 		/*	Send status packet	*/
 		if (is_timer_expired(&server_ctx.send_status_timer)) {
 			double lat = 0.0;

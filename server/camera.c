@@ -17,6 +17,8 @@
 #include <libv4l2.h>
 #include <jpeglib.h>
 #include "camera.h"
+#include "../packet.h"
+#include "utils.h"
 
 #define CAMERA_DEV_NAME	 "/dev/video0"
 #define MAX_RAW_IMAGE_SIZE	(320 * 240 * 3)
@@ -30,17 +32,13 @@ typedef struct {
 	int fd;		//	File descriptor to CAMERA_DEV_NAME
 	buffer_s *buffers;	//	MMAP buffers
 	unsigned int buffers_count;	//	total MMAP buffers count
-	unsigned char raw_image[MAX_RAW_IMAGE_SIZE];
-	int image_length;
 	int thread_aborted;
 	pthread_t grabbing_thread;
-	pthread_mutex_t image_copy_mutex;
-	unsigned int width;
-	unsigned int height;
-	int quality;
+    struct timeval send_frame_timer;
 } camera_ctx_s;
 
 static camera_ctx_s camera_ctx;
+static camera_settings_s cur_settings;
 
 /**	Wrap ioctl procedure to V4L2 logic.
  *  Return 1 on success, otherwise return 0.
@@ -132,54 +130,58 @@ static int get_v4l2_Control(int control)
     return control_s.value;
 }
 
-void get_frame(unsigned char frame[MAX_JPEG_IMAGE_SIZE], int *size)
+void send_frame(unsigned char *raw_frame, unsigned int size)
 {
+    extern void send_picture(unsigned char *picture, unsigned int length);
     struct jpeg_compress_struct cinfo;
     struct jpeg_error_mgr jerr;
     JSAMPROW row_pointer[1];
     unsigned char *jpeg_mem = NULL;
     unsigned long jpeg_size = 0;
 
-	pthread_mutex_lock(&camera_ctx.image_copy_mutex);
+    /*  Skip some frames for holding constant FPS  */
+    if (cur_settings.fps < 0.1) {
+        return;
+    }
+    if (!is_timer_expired(&camera_ctx.send_frame_timer))
+        return;
 
 	/*	Init Jpeg compression to memory	*/
     cinfo.err = jpeg_std_error(&jerr);
     jpeg_create_compress(&cinfo);
     jpeg_mem_dest(&cinfo, &jpeg_mem, &jpeg_size);
 
-    cinfo.image_width = camera_ctx.width;
-    cinfo.image_height = camera_ctx.height;
+    cinfo.image_width = cur_settings.width;
+    cinfo.image_height = cur_settings.height;
     cinfo.input_components = 3;
     cinfo.in_color_space = JCS_RGB;
 
     jpeg_set_defaults(&cinfo);
-    jpeg_set_quality(&cinfo, camera_ctx.quality, TRUE);
+    jpeg_set_quality(&cinfo, cur_settings.quality, TRUE);
 
     /*	Start compression - load image data	*/
     jpeg_start_compress(&cinfo, TRUE);
     while (cinfo.next_scanline < cinfo.image_height) {
-        row_pointer[0] = &camera_ctx.raw_image[cinfo.next_scanline * cinfo.image_width * cinfo.input_components];
+        row_pointer[0] = &raw_frame[cinfo.next_scanline * cinfo.image_width * cinfo.input_components];
         jpeg_write_scanlines(&cinfo, row_pointer, 1);
     }
     /*	Finish compression	*/
     jpeg_finish_compress(&cinfo);
     jpeg_destroy_compress(&cinfo);
 
-    /*	Store jpeg image	*/
-	if (jpeg_size > MAX_JPEG_IMAGE_SIZE) {
-		printf("ERROR %s() Size of encoded image (%ld) exceeded maximum buffer size (%d).\n",
+    /*	Send jpeg image	*/
+    if (jpeg_size <= MAX_JPEG_IMAGE_SIZE) {
+        send_picture(jpeg_mem, jpeg_size);
+    } else {
+        printf("ERROR %s() Size of encoded image (%ld) exceeded maximum buffer size (%d).\n",
 				__FUNCTION__, jpeg_size, MAX_JPEG_IMAGE_SIZE);
-		free(jpeg_mem);
-		pthread_mutex_unlock(&camera_ctx.image_copy_mutex);
-		*size = 0;
-		return;
-	}
-	memcpy(frame, jpeg_mem, jpeg_size);
-	*size = jpeg_size;
+    }
 
-	/*	Release resources	*/
+    unsigned int timeout = 1000. / cur_settings.fps;
+    add_timer(timeout, &camera_ctx.send_frame_timer);
+
+    /*	Release resources	*/
     free(jpeg_mem);
-	pthread_mutex_unlock(&camera_ctx.image_copy_mutex);
 }
 
 void *grab_pictures(void *arg)
@@ -227,16 +229,13 @@ void *grab_pictures(void *arg)
             break;
         }
 
-		pthread_mutex_lock(&camera_ctx.image_copy_mutex);
 		if (mmap_buf.bytesused != MAX_RAW_IMAGE_SIZE) {
 			printf("ERROR %s()Incorrect size of MMAP buffer = %d. Should be %d\n",
 					__FUNCTION__, mmap_buf.bytesused, MAX_RAW_IMAGE_SIZE);
-			pthread_mutex_unlock(&camera_ctx.image_copy_mutex);
 			break;
 		}
-		camera_ctx.image_length = mmap_buf.bytesused;
-		memcpy(camera_ctx.raw_image, (unsigned char *)camera_ctx.buffers[mmap_buf.index].start, camera_ctx.image_length);
-		pthread_mutex_unlock(&camera_ctx.image_copy_mutex);
+        /*  Try to send frame */
+        send_frame((unsigned char *)camera_ctx.buffers[mmap_buf.index].start, mmap_buf.bytesused);
 
 		/*	Release MMAP buffer	*/
         ret = xioctl(VIDIOC_QBUF, &mmap_buf);
@@ -253,11 +252,6 @@ void *grab_pictures(void *arg)
 int is_capture_aborted()
 {
 	return camera_ctx.thread_aborted;
-}
-
-void stop_capturing()
-{
-	camera_ctx.thread_aborted = 1;
 }
 
 /** Open /dev/video0 camera device. Configure it.
@@ -301,10 +295,7 @@ int init_camera(unsigned int width, unsigned int height)
     }
     if (ret != 1)
         return 0;
-    camera_ctx.width = width;
-    camera_ctx.height = height;
-    camera_ctx.quality = 70;
-    printf("INFO  %s() Frame size: %dx%d. Quality = %d\n", __FUNCTION__, width, height, camera_ctx.quality);
+    printf("INFO  %s() Frame size: %dx%d. Quality = %d\n", __FUNCTION__, width, height, cur_settings.quality);
 
 //    struct v4l2_streamparm capture_param;
 //    capture_param.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
@@ -371,11 +362,6 @@ int init_camera(unsigned int width, unsigned int height)
             return 0;
     }
 
-	ret = pthread_mutex_init(&camera_ctx.image_copy_mutex, NULL);
-	if (ret != 0) {
-		perror("Creating mutex on image copy");
-		return 0;
-	}
 	ret = pthread_create(&camera_ctx.grabbing_thread, NULL, grab_pictures, NULL);
 	if (ret != 0) {
 		perror("Starting grabbing thread");
@@ -394,15 +380,15 @@ void release_camera(int signum)
     unsigned int i;
 
 	printf("INFO  %s() Release resources. signum=%d\n", __FUNCTION__, signum);
-	stop_capturing();
-	if (camera_ctx.fd <= 0)
-		return;
+    camera_ctx.thread_aborted = 1;
+    timerclear(&camera_ctx.send_frame_timer);
+    if (camera_ctx.fd <= 0) {
+        printf("INFO  %s() Resources has been already released.\n", __FUNCTION__);
+        return;
+    }
 
 	if (pthread_join(camera_ctx.grabbing_thread, NULL) != 0) {
 		perror("Joining to grabbing_thread");
-	}
-	if (pthread_mutex_destroy(&camera_ctx.image_copy_mutex) != 0) {
-		perror("Destroying mutex image_copy_mutex");
 	}
 
     type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
@@ -414,6 +400,56 @@ void release_camera(int signum)
     for (i = 0; i < camera_ctx.buffers_count; ++i)
         v4l2_munmap(camera_ctx.buffers[i].start, camera_ctx.buffers[i].length);
     v4l2_close(camera_ctx.fd);
+    camera_ctx.fd = -1;
 
 	printf("INFO  %s() Resources is released.\n", __FUNCTION__);
+}
+
+void update_camera_settings(struct camera_settings *settings)
+{
+    int isCorrect = 0;
+
+    //  TODO add checking exposure settings
+    cur_settings.exposure_type = settings->exposure_type;
+    cur_settings.exposure_value = settings->exposure_value;
+
+    /*  Do any actions only upon different settings */
+    if (memcmp(&cur_settings, settings, sizeof(camera_settings_s)) == 0)
+        return;
+
+    /*  Sanity check    */
+    isCorrect |= (settings->width == 160) && (settings->height == 120);
+    isCorrect |= (settings->width == 320) && (settings->height == 240);
+    isCorrect |= (settings->width == 640) && (settings->height == 480);
+    isCorrect |= (settings->width == 960) && (settings->height == 720);
+    isCorrect &= (settings->quality >= 0) && (settings->quality <= 100);
+    isCorrect &= (settings->fps >= 0) && (settings->fps <= 30);
+    if (isCorrect == 0) {
+        printf("ERROR %s() Incorrect settings. Skip it.\n", __FUNCTION__);
+        return;
+    }
+
+    if (cur_settings.quality != settings->quality) {
+        cur_settings.quality = settings->quality;
+    }
+
+    if (cur_settings.width != settings->width) {
+        cur_settings.width = settings->width;
+        cur_settings.height = settings->height;
+
+        release_camera(30);
+        init_camera(cur_settings.width, cur_settings.height);
+    }
+
+    if (cur_settings.fps != settings->fps) {
+        cur_settings.fps = settings->fps;
+        printf("INFO  %s() Chosen new FPS rate=%f\n", __FUNCTION__, settings->fps);
+
+        if (cur_settings.fps > 0) {
+            unsigned int timeout = 1000. / cur_settings.fps;
+            add_timer(timeout, &camera_ctx.send_frame_timer);
+        } else {
+            timerclear(&camera_ctx.send_frame_timer);
+        }
+    }
 }

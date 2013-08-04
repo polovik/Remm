@@ -7,11 +7,7 @@
 
 #define MAX_JPEG_IMAGE_SIZE	1000000
 
-void get_frame(unsigned char frame[MAX_JPEG_IMAGE_SIZE], int *size);
-int is_capture_aborted();
-void stop_capturing();
-
-int init_camera(unsigned int width, unsigned int height);
 void release_camera(int signum);
+void update_camera_settings(struct camera_settings *settings);
 
 #endif /* CAMERA_H_ */

@@ -54,11 +54,13 @@ typedef enum {
 } autopilot_command_e;
 
 /** Camera specific settings */
-typedef struct {
+typedef struct camera_settings {
     unsigned int width;
     unsigned int height;
-    int quality;    /**<    JPEG quality in range [0...100] */
-    int exposure;   /**<    -1(Auto exposure), 0(Aperture priority), >0(Manual exposure) */
+    unsigned int quality;    /**<    JPEG quality in range [0...100] */
+    // see enum v4l2_exposure_auto_type in "linux/videodev2.h"
+    unsigned int exposure_type;    /**<    0(Auto), 1(Manual), 2(Shutter), 3(Aperture) */
+    unsigned int exposure_value;   /**<    Value of manual exposure */
     float fps;      /**<	0(turn off camera), [0.1 to 2] step=0.1, (2 to 10] step=1 */
 } camera_settings_s;
 

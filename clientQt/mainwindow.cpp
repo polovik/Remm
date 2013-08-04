@@ -41,19 +41,7 @@ void MainWindow::showQmlView(QGuiApplication *app)
     printf("INFO  %s() Enter in Main LOOP.\n", __FUNCTION__);
     qmlView = new QQuickView();
     QObject::connect(qmlView->engine(), SIGNAL(quit()), (QObject *)app, SLOT(quit()));
-    /*    while (1) {
-            if (connection_established == 1) {
-                display_frame(get_fps(), last_status.battery_charge, last_status.gps_latitude,
-                              last_status.gps_longitude);
-                //	Poll every 100ms
-                poll_keys(100);
-                send_command();
-            } else {
-                sleep(1);
-            }
-        }
-        printf("INFO  %s() Exit from Main LOOP.\n", __FUNCTION__);
-    */
+
     cameraSource = new CameraSource(QSize(640, 480));
     connection = new Connection();
     QObject::connect(connection, SIGNAL(pictureReceived(QImage)), cameraSource, SLOT(displayFrame(QImage)));

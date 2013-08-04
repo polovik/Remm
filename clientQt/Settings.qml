@@ -112,14 +112,13 @@ Item {
         Label {
             id: label_resolution
             x: 63
-            y: 120
+            y: (parent.height - combo_resolution.height - height) / 4
             text: "Resolution:"
         }
-
         ComboBox {
             id: combo_resolution
-            x: 63
-            y: 137
+            anchors.left: label_resolution.left
+            y: (parent.height - label_resolution.height - height) / 2
             model: ListModel {
                 id: modes
                 ListElement { text: "960x720"; horRes: 960; verRes: 720 }
@@ -128,50 +127,67 @@ Item {
                 ListElement { text: "160x120"; horRes: 160; verRes: 120 }
             }
             currentIndex: 2
+            function getHorResolution() {
+                return modes.get(currentIndex).horRes
+            }
+            function getVerResolution() {
+                return modes.get(currentIndex).verRes
+            }
         }
 
         Label {
             id: label_exposure
-            x: 243
-            y: 41
+            x: parent.width / 3 + 30
+            anchors.top: label_resolution.top
             text: "Exposure:"
         }
-
         Slider {
             id: slider_exposure
-            x: 232
-            y: 120
+            anchors.left: label_exposure.left
+            y: (parent.height - label_resolution.height - height) / 5 * 4
+            width: parent.width / 3 - 60
             value: 100
             stepSize: 10
-            maximumValue: 1000
+            minimumValue: 0
+            maximumValue: 10000
         }
-
         ComboBox {
             id: combo_exposure
-            x: 243
-            y: 83
+            anchors.left: label_exposure.left
+            anchors.top: combo_resolution.top
+            // see enum v4l2_exposure_auto_type in "linux/videodev2.h"
             model: [ "Auto", "Manual", "Shutter", "Aperture" ]
             currentIndex: 0
             onCurrentIndexChanged: {
                 if (currentIndex == 0)
                     slider_exposure.enabled = false
+                else
+                    slider_exposure.enabled = true
             }
         }
 
         Label {
             id: label_quality
-            x: 257
-            y: 164
-            text: "Quality:"
+            x: parent.width / 3 * 2 + 10
+            anchors.top: label_resolution.top
+            text: ""
+            function updateLabel(quality) {
+                text = "Quality: " + quality + "%"
+            }
         }
         Slider {
             id: slider_quality
-            x: 343
-            y: 164
+            anchors.left: label_quality.left
+            anchors.verticalCenter: combo_resolution.verticalCenter
+            width: parent.width / 3 - 60
             tickmarksEnabled: false
             value: 70
             stepSize: 1
+            minimumValue: 0
             maximumValue: 100
+            onValueChanged: {
+                label_quality.updateLabel(value)
+            }
         }
 
         Label {
@@ -206,10 +222,15 @@ Item {
             checked: false
             onClicked: {
                 connectionEstablished()
+                var url = ""
                 if (radio_button_IPv6.checked)
-                    connectRPi.tryDirectConnectToRPi(text_IPv6_RPi_URL.text, Number(textRPiPort.text))
+                    url = text_IPv6_RPi_URL.text
                 else
-                    connectRPi.tryDirectConnectToRPi(text_IPv4_RPi_IP.text, Number(textRPiPort.text))
+                    url = text_IPv4_RPi_IP.text
+                connectRPi.tryDirectConnectToRPi(url, Number(textRPiPort.text),
+                                                 combo_resolution.getHorResolution(), combo_resolution.getVerResolution(),
+                                                 combo_exposure.currentIndex, slider_exposure.value,
+                                                 slider_quality.value)
             }
         }
     }
