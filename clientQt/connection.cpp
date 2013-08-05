@@ -102,10 +102,11 @@ void Connection::data_rx(unsigned char *data, unsigned int length)
 
     memcpy(&last_status, status_packet, sizeof(status_packet_s));
 //    qDebug("INFO  %s() height=%d, direction=%d, gps_latitude=%f, gps_longitude=%f, "
-//            "slope=%d, battery_charge=%d, info=%s.", __FUNCTION__,
+//            "slope=%d, battery_charge=%f, info=%s.", __FUNCTION__,
 //            status_packet->height, status_packet->direction, status_packet->gps_latitude,
 //            status_packet->gps_longitude, status_packet->slope, status_packet->battery_charge, status_packet->info);
     emit gpsPosReceived(status_packet->gps_latitude, status_packet->gps_longitude);
+    emit batteryLevelReceived(status_packet->battery_charge);
 }
 
 void Connection::picture_rx(unsigned char *data, unsigned int length)

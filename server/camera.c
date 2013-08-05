@@ -21,7 +21,6 @@
 #include "utils.h"
 
 #define CAMERA_DEV_NAME	 "/dev/video0"
-#define MAX_RAW_IMAGE_SIZE	(320 * 240 * 3)
 
 typedef struct {
     void   *start;
@@ -191,6 +190,7 @@ void *grab_pictures(void *arg)
     fd_set fds;
     struct timeval tv;
     int ret;
+    unsigned int max_raw_frame_size;
 
     type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
     ret = xioctl(VIDIOC_STREAMON, &type);
@@ -229,9 +229,10 @@ void *grab_pictures(void *arg)
             break;
         }
 
-		if (mmap_buf.bytesused != MAX_RAW_IMAGE_SIZE) {
+        max_raw_frame_size = cur_settings.width * cur_settings.height * 3;
+		if (mmap_buf.bytesused != max_raw_frame_size) {
 			printf("ERROR %s()Incorrect size of MMAP buffer = %d. Should be %d\n",
-					__FUNCTION__, mmap_buf.bytesused, MAX_RAW_IMAGE_SIZE);
+					__FUNCTION__, mmap_buf.bytesused, max_raw_frame_size);
 			break;
 		}
         /*  Try to send frame */

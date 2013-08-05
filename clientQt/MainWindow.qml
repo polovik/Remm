@@ -2,8 +2,8 @@ import QtQuick 2.1
 
 Rectangle {
     id: mainScreen
-    width: 700
-    height: 500
+    width: 1000
+    height: 700
 
     state: "CONNECTION"
     states: [
@@ -58,6 +58,7 @@ Rectangle {
         height: parent.height
         Connections {
             onConnectionEstablished: {
+                screenControlPanel.makeDefaultSettings()
                 mainScreen.state = "CONTROLLING"
             }
         }

@@ -4,8 +4,8 @@ import QtQuick.Controls 1.0
 import QtMultimedia 5.0
 
 Item {
-    width: 700
-    height: 500
+    width: 1000
+    height: 700
     signal tryChangeSettings()
 
     Rectangle {
@@ -31,20 +31,20 @@ Item {
         WebView {
             id: navigationView
             x: 0
-            y: 259
+            width: parent.width
+            anchors.top: canvasCamera.bottom
+            anchors.bottom: parent.bottom
             url: "google_maps.html"
-            width: 272
-            height: 241
             objectName: "navigationView"
             enabled: false
         }
 
         Canvas {
             id: outboardDisplayCanvas
-            x: 421
-            y: 0
-            width: 279
-            height: 238
+            x: 640
+            y: 242
+            width: 200
+            height: 200
             property int tangageAngle: 8 //  in range [-180, 180]
             property int heelAngle: 5
             onPaint: {
@@ -194,8 +194,8 @@ Item {
 
         Canvas {
             id: heightCanvas
-            x: 294
-            y: 352
+            x: 640
+            y: 15
             width: 70
             height: 148
             property int currentHeight: 323
@@ -265,8 +265,8 @@ Item {
 
         Canvas {
             id: compassCanvas
-            x: 397
-            y: 386
+            x: 640
+            y: 161
             width: 279
             height: 81
             property int curDirection: 0
@@ -395,11 +395,12 @@ Item {
 
         Label {
             id: labelFPS
-            x: 430
-            y: 328
+            x: 729
+            y: 15
             width: 212
             height: 17
             text: ""
+            z: 4
             function updateLabel(fps) {
                 text = "Camera FPS: " + fps
             }
@@ -407,8 +408,8 @@ Item {
 
         Slider {
             id: sliderFPS
-            x: 430
-            y: 345
+            x: 729
+            y: 37
             width: 212
             height: 22
             orientation: 1
@@ -435,29 +436,16 @@ Item {
             id: canvasCamera
             x: 0
             y: 0
-            width: 320
-            height: 240
+            width: 640
+            height: 480
             source: sourceCamera
-        }
-
-        Slider {
-            id: slider__horizontal_1
-            x: 433
-            y: 472
-            value: 45
-            tickmarksEnabled: true
-            stepSize: 1
-            maximumValue: 360
-            onValueChanged: {
-                compassCanvas.curDirection = value
-                compassCanvas.requestPaint()
-            }
         }
 
         Image {
             id: imageZoom
-            x: 283
-            y: 259
+            x: parent.width - width - 10
+            anchors.top: navigationView.top
+            anchors.topMargin: 10
             width: 83
             height: 26
             source: "plus_minus.png"
@@ -475,11 +463,83 @@ Item {
 
         Button {
             id: button_settings
-            x: 518
-            y: 259
+            x: 887
+            y: 85
+            width: 97
+            height: 27
             text: "Settings"
             onClicked:
                 tryChangeSettings()
         }
+
+        Canvas {
+            id: canvasBattery
+            objectName: "canvasBattery"
+            x: 858
+            y: 262
+            width: 86
+            height: 192
+            property int level: 20
+            property double voltage: 10.10 // max 2 number after point
+            onPaint: {
+                var ctx = canvasBattery.getContext('2d')
+
+                ctx.beginPath()
+                var gradient = ctx.createLinearGradient(0, 0, 0, height)
+                gradient.addColorStop(0.0, "green")
+                gradient.addColorStop(0.7, "yellow")
+                gradient.addColorStop(1.0, "red")
+                ctx.fillStyle = gradient
+                var leftOffset = width / 15
+                var topOffset = height / 15
+                var gradWidth = width - 2 * leftOffset
+                var gradHeight = height - topOffset
+                ctx.fillRect(leftOffset, topOffset, gradWidth, gradHeight)
+                ctx.fill()
+
+                ctx.fillStyle = "white"
+                gradHeight = gradHeight * (100 - level) / 100
+                ctx.fillRect(leftOffset, topOffset, gradWidth, gradHeight)
+                ctx.fill()
+
+                ctx.strokeText(" " + voltage + "V", width / 2 - 20, height / 2)
+                ctx.drawImage("battery.png", 0, 0, width, height)
+            }
+            Component.onCompleted: {
+                loadImage("battery.png")
+            }
+            onImageLoaded: {
+                requestPaint()
+            }
+            function updateBatteryLevel(vol) {
+                var minLevel = 7.5
+                var maxLevel = 11.1
+                voltage = Math.floor(vol * 100) / 100;
+                if (voltage < minLevel)
+                    level = 0
+                else
+                    level = (vol - minLevel) * 100 / (maxLevel - minLevel)
+                requestPaint()
+            }
+        }
+
+        Slider {
+            id: slider__horizontal_1
+            x: 735
+            y: 133
+            value: 10
+            tickmarksEnabled: true
+            stepSize: 0.1
+            maximumValue: 11.1
+            onValueChanged: {
+                canvasBattery.updateBatteryLevel(value)
+                canvasBattery.requestPaint()
+            }
+        }
+    }
+
+    function makeDefaultSettings() {
+        sliderFPS.value = 1
+        compassCanvas.forceActiveFocus()
     }
 }

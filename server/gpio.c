@@ -211,7 +211,7 @@ void *battery_status(void *arg)
 	return 0;
 }
 
-int get_battery_charge()
+float get_battery_charge()
 {
 	return battery_charge;
 }

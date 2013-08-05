@@ -24,6 +24,6 @@ void release_leds(int signum);
 int init_gpio();
 int is_button_pressed(button_e button);
 void set_rgb_led_mode(rgb_mode_e mode);
-int get_battery_charge();
+float get_battery_charge();
 
 #endif /* GPIO_H_ */

@@ -39,7 +39,7 @@ typedef struct {
 	double gps_latitude;
 	double gps_longitude;
 	int slope;		/**<	Slope accordingly to horizontal positions */
-	int battery_charge;
+    float battery_charge; /**<    In voltages */
 	char info[100];
 } status_packet_s;
 

@@ -51,6 +51,7 @@ void MainWindow::showQmlView(QGuiApplication *app)
     qmlContext->setContextProperty("connectRPi", (QObject *)connection);
     qmlContext->setContextProperty("mainWindow", (QObject *)this);
     qmlContext->setContextProperty("sourceCamera", (QObject *)cameraSource);
+    qmlView->setResizeMode(QQuickView::SizeRootObjectToView);
     qmlView->setSource(QUrl("MainWindow.qml"));
 
     webView = qmlView->rootObject()->findChild<QQuickWebView *>("navigationView");
@@ -58,6 +59,13 @@ void MainWindow::showQmlView(QGuiApplication *app)
         qFatal("%s::%s() Can't get access to GoogleMaps view", typeid(*this).name(), __FUNCTION__ );
         return;
     }
+
+    QObject *canvasBattery = qmlView->rootObject()->findChild<QObject *>("canvasBattery");
+    if (canvasBattery == NULL) {
+        qFatal("%s::%s() Can't get access to Battery level canvas", typeid(*this).name(), __FUNCTION__ );
+        return;
+    }
+    QObject::connect(connection, SIGNAL(batteryLevelReceived(QVariant)), canvasBattery, SLOT(updateBatteryLevel(QVariant)));
 
     qmlView->show();
 }
