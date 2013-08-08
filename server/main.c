@@ -17,6 +17,7 @@
 #include "gpio.h"
 #include "utils.h"
 #include "gps.h"
+#include "bmp085.h"
 
 #define STATUS_PACKET_TIMEOUT	500
 
@@ -255,6 +256,7 @@ void destroy_connection(int signum)
 	release_camera(signum);
 	release_leds(signum);
 	release_gps(signum);
+	release_bmp085(signum);
 	exit_thread = 1;
 	if (pthread_join(command_rx_thread, NULL) != 0) {
 		perror("Joining to command_rx_thread");
@@ -266,6 +268,9 @@ int main(int argc, char *argv[])
 {
 	status_packet_s status_packet;
 	int ret;
+	float pressure;
+	float temperature;
+	float altitude;
 
 	status_packet.magic = MAGIC_STATUS;
 	memset(&server_ctx, 0x00, sizeof(server_ctx_s));
@@ -278,6 +283,14 @@ int main(int argc, char *argv[])
     	return 1;
 
 	init_gps();
+
+	init_bmp085();
+	temperature = get_temperature();
+	pressure = get_pressure();
+	altitude = get_Altitude(pressure, temperature);
+	printf("INFO  %s() Temperature = %f C\n", __FUNCTION__, temperature);
+	printf("INFO  %s() Pressure = %f Pa\n", __FUNCTION__, pressure);
+	printf("INFO  %s() Altitude = %f m\n", __FUNCTION__, altitude);
 
 	exit_thread = 0;
 	ret = pthread_create(&command_rx_thread, NULL, command_rx, NULL);
