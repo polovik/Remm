@@ -56,7 +56,7 @@ static int readRawTemperature(int32_t *raw_temp)
 				BMP085_REGISTER_CONTROL, BMP085_REGISTER_READTEMPCMD);
 		return -1;
 	}
-	delayMicroseconds(5);
+	delay(5);
 	ret = wiringPiI2CReadReg16(i2c_fd, BMP085_REGISTER_TEMPDATA);
 	if(ret < 0) {
 		printf("ERROR %s() Can't read BMP085 register 0x%X.\n", __FUNCTION__, BMP085_REGISTER_TEMPDATA);
@@ -82,17 +82,17 @@ static int readRawPressure(int32_t *raw_pressure)
 	}
 	switch (mode) 	{
 		case BMP085_MODE_ULTRALOWPOWER:
-			delayMicroseconds(5);
+			delay(5);
 			break;
 		case BMP085_MODE_STANDARD:
-			delayMicroseconds(8);
+			delay(8);
 			break;
 		case BMP085_MODE_HIGHRES:
-			delayMicroseconds(14);
+			delay(14);
 			break;
 		case BMP085_MODE_ULTRAHIGHRES:
 		default:
-			delayMicroseconds(26);
+			delay(26);
 			break;
 	}
 
