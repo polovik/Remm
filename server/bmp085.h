@@ -4,6 +4,7 @@
 #include <stdint.h>
 
 #define BMP085_I2C_ADDRESS                (0x77)
+#define BMP085_CHIPID                	   (0x55)
 
 /*	BMP085 REGISTERS	*/
 enum {
@@ -51,11 +52,11 @@ typedef struct {
 	int16_t  md;
 } calibration_data;
 
-int init_bmp085();
+int init_bmp085(bmp085_mode_t resolution_mode);
 void release_bmp085(int signum);
 
-float get_temperature();
-float get_pressure();
-float get_Altitude(float pressure, float temp);
+float get_temperature(int *raw_temperature_reg);
+float get_pressure(int raw_temperature_reg);
+float get_altitude(float pressure, float temp);
 
 #endif /* BMP085_H_ */

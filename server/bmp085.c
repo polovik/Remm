@@ -4,7 +4,6 @@
 #include <math.h>
 #include <wiringPi.h>
 #include <wiringPiI2C.h>
-#include "utils.h"
 #include "bmp085.h"
 
 static calibration_data coeffs;
@@ -14,31 +13,18 @@ static bmp085_mode_t mode;
 static int readCoefficients()
 {
 	int ret = 0;
-#if 1
-	coeffs.ac1 = 408;
-	coeffs.ac2 = -72;
-	coeffs.ac3 = -14383;
-	coeffs.ac4 = 32741;
-	coeffs.ac5 = 32757;
-	coeffs.ac6 = 23153;
-	coeffs.b1  = 6190;
-	coeffs.b2  = 4;
-	coeffs.mb  = -32768;
-	coeffs.mc  = -8711;
-	coeffs.md  = 2868;
-#else
-	coeffs.ac1 = wiringPiI2CReadReg16(BMP085_REGISTER_CAL_AC1);
-	coeffs.ac2 = wiringPiI2CReadReg16(BMP085_REGISTER_CAL_AC2);
-	coeffs.ac3 = wiringPiI2CReadReg16(BMP085_REGISTER_CAL_AC3);
-	coeffs.ac4 = wiringPiI2CReadReg16(BMP085_REGISTER_CAL_AC4);
-	coeffs.ac5 = wiringPiI2CReadReg16(BMP085_REGISTER_CAL_AC5);
-	coeffs.ac6 = wiringPiI2CReadReg16(BMP085_REGISTER_CAL_AC6);
-	coeffs.b1  = wiringPiI2CReadReg16(BMP085_REGISTER_CAL_B1);
-	coeffs.b2  = wiringPiI2CReadReg16(BMP085_REGISTER_CAL_B2);
-    coeffs.mb  = wiringPiI2CReadReg16(BMP085_REGISTER_CAL_MB);
-    coeffs.mc  = wiringPiI2CReadReg16(BMP085_REGISTER_CAL_MC);
-    coeffs.md  = wiringPiI2CReadReg16(BMP085_REGISTER_CAL_MD);
-#endif
+
+	coeffs.ac1 = wiringPiI2CReadReg16(i2c_fd, BMP085_REGISTER_CAL_AC1);
+	coeffs.ac2 = wiringPiI2CReadReg16(i2c_fd, BMP085_REGISTER_CAL_AC2);
+	coeffs.ac3 = wiringPiI2CReadReg16(i2c_fd, BMP085_REGISTER_CAL_AC3);
+	coeffs.ac4 = wiringPiI2CReadReg16(i2c_fd, BMP085_REGISTER_CAL_AC4);
+	coeffs.ac5 = wiringPiI2CReadReg16(i2c_fd, BMP085_REGISTER_CAL_AC5);
+	coeffs.ac6 = wiringPiI2CReadReg16(i2c_fd, BMP085_REGISTER_CAL_AC6);
+	coeffs.b1  = wiringPiI2CReadReg16(i2c_fd, BMP085_REGISTER_CAL_B1);
+	coeffs.b2  = wiringPiI2CReadReg16(i2c_fd, BMP085_REGISTER_CAL_B2);
+    coeffs.mb  = wiringPiI2CReadReg16(i2c_fd, BMP085_REGISTER_CAL_MB);
+    coeffs.mc  = wiringPiI2CReadReg16(i2c_fd, BMP085_REGISTER_CAL_MC);
+    coeffs.md  = wiringPiI2CReadReg16(i2c_fd, BMP085_REGISTER_CAL_MD);
 
     return ret;
 }
@@ -47,9 +33,6 @@ static int readRawTemperature(int32_t *raw_temp)
 {
 	int ret;
 
-#if 1
-	*raw_temp = 27898;
-#else
 	ret = wiringPiI2CWriteReg8(i2c_fd, BMP085_REGISTER_CONTROL, BMP085_REGISTER_READTEMPCMD);
 	if(ret < 0) {
 		printf("ERROR %s() Can't write 0x%X to BMP085 register 0x%X.\n", __FUNCTION__,
@@ -63,7 +46,6 @@ static int readRawTemperature(int32_t *raw_temp)
 		return -1;
 	}
 	*raw_temp = ret;
-#endif
 
 	return 0;
 }
@@ -71,9 +53,7 @@ static int readRawTemperature(int32_t *raw_temp)
 static int readRawPressure(int32_t *raw_pressure)
 {
 	int ret = 0;
-#if 1
-	*raw_pressure = 23843;
-#else
+
 	ret = wiringPiI2CWriteReg8(i2c_fd, BMP085_REGISTER_CONTROL, BMP085_REGISTER_READPRESSURECMD + (mode << 6));
 	if(ret < 0) {
 		printf("ERROR %s() Can't write 0x%X to BMP085 register 0x%X.\n", __FUNCTION__,
@@ -109,12 +89,11 @@ static int readRawPressure(int32_t *raw_pressure)
 	}
 	*raw_pressure += (uint32_t)ret;
 	*raw_pressure >>= (8 - mode);
-#endif
 
 	return 0;
 }
 
-int init_bmp085()
+int init_bmp085(bmp085_mode_t resolution_mode)
 {
 	int ret;
 
@@ -125,12 +104,12 @@ int init_bmp085()
 	}
 
 	ret = wiringPiI2CReadReg8(i2c_fd, BMP085_REGISTER_CHIPID);
-	if(ret != 0x55) {
+	if(ret != BMP085_CHIPID) {
 		printf("ERROR %s() Incorrect chip ID(0x%X) of BMP085 sensor.\n", __FUNCTION__, ret);
 		return -1;
 	}
 
-	mode = BMP085_MODE_ULTRALOWPOWER;
+	mode = resolution_mode;
 	readCoefficients();
 
 	printf("INFO  %s() BMP085 is successfully initiated.\n", __FUNCTION__);
@@ -144,7 +123,7 @@ void release_bmp085(int signum)
 	printf("INFO  %s() Resources is released.\n", __FUNCTION__);
 }
 
-float get_temperature()
+float get_temperature(int *raw_temperature_reg)
 {
 	float temperature;
 	int32_t raw_temp;	//	UT in datasheet
@@ -159,29 +138,23 @@ float get_temperature()
 	x1 = (raw_temp - (int32_t)coeffs.ac6) * ((int32_t)coeffs.ac5) >> 15;
 	x2 = ((int32_t)coeffs.mc << 11) / (x1 + (int32_t)coeffs.md);
 	b5 = x1 + x2;
+	*raw_temperature_reg = b5;
 	temperature = (b5 + 8) >> 4;
 	temperature /= 10;
 	return temperature;
 }
 
-float get_pressure()
+float get_pressure(int raw_temperature_reg)
 {
 	int32_t  compp = 0;
 	int32_t  x1, x2, b5, b6, x3, b3, p;
 	uint32_t b4, b7;
-	int32_t raw_temp;
 	int32_t raw_pressure;
 
 	/* Get the raw pressure and temperature values */
-	if (readRawTemperature(&raw_temp) < 0)
-		return -1.;
+	b5 = raw_temperature_reg;
 	if (readRawPressure(&raw_pressure) < 0)
 		return -1.;
-
-	/* Temperature compensation */
-	x1 = (raw_temp - (int32_t)coeffs.ac6) * ((int32_t)coeffs.ac5) >> 15;
-	x2 = ((int32_t)coeffs.mc << 11) / (x1 + (int32_t)coeffs.md);
-	b5 = x1 + x2;
 
 	/* Pressure compensation */
 	b6 = b5 - 4000;
@@ -210,7 +183,7 @@ float get_pressure()
 	return ((float)compp / 100.);
 }
 
-float get_Altitude(float pressure, float temp)
+float get_altitude(float pressure, float temp)
 {
 	/* Hyposometric formula:                      */
 	/*                                            */
@@ -226,5 +199,7 @@ float get_Altitude(float pressure, float temp)
 	float meters = (((float)pow((sea_level/pressure), 0.190223f) - 1.0f)
 				    * (temp + 273.15f)) / 0.0065f;
 
+//	meters = 44330. * (1. - pow(pressure / sea_level, (1. / 5.255)));
+//	printf("%f\n", meters);
 	return meters;
 }

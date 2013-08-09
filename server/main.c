@@ -271,6 +271,7 @@ int main(int argc, char *argv[])
 	float pressure;
 	float temperature;
 	float altitude;
+	int raw_temperature_reg;
 
 	status_packet.magic = MAGIC_STATUS;
 	memset(&server_ctx, 0x00, sizeof(server_ctx_s));
@@ -284,10 +285,10 @@ int main(int argc, char *argv[])
 
 	init_gps();
 
-	init_bmp085();
-	temperature = get_temperature();
-	pressure = get_pressure();
-	altitude = get_Altitude(pressure, temperature);
+	init_bmp085(BMP085_MODE_ULTRALOWPOWER);
+	temperature = get_temperature(&raw_temperature_reg);
+	pressure = get_pressure(raw_temperature_reg);
+	altitude = get_altitude(pressure, temperature);
 	printf("INFO  %s() Temperature = %f C\n", __FUNCTION__, temperature);
 	printf("INFO  %s() Pressure = %f Pa\n", __FUNCTION__, pressure);
 	printf("INFO  %s() Altitude = %f m\n", __FUNCTION__, altitude);
