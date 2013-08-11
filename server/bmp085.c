@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <math.h>
+#include <unistd.h>
 #include <wiringPi.h>
 #include <wiringPiI2C.h>
 #include "bmp085.h"
@@ -10,10 +11,15 @@ static calibration_data coeffs;
 static int i2c_fd = -1;
 static bmp085_mode_t mode;
 
+#define SWAP_2BYTES(x) (((x & 0xFFFF) >> 8) | ((x & 0xFF) << 8))
+
 static int readCoefficients()
 {
 	int ret = 0;
 
+    if (i2c_fd <= 0) {
+        return -1;
+    }
 	coeffs.ac1 = wiringPiI2CReadReg16(i2c_fd, BMP085_REGISTER_CAL_AC1);
 	coeffs.ac2 = wiringPiI2CReadReg16(i2c_fd, BMP085_REGISTER_CAL_AC2);
 	coeffs.ac3 = wiringPiI2CReadReg16(i2c_fd, BMP085_REGISTER_CAL_AC3);
@@ -26,6 +32,18 @@ static int readCoefficients()
     coeffs.mc  = wiringPiI2CReadReg16(i2c_fd, BMP085_REGISTER_CAL_MC);
     coeffs.md  = wiringPiI2CReadReg16(i2c_fd, BMP085_REGISTER_CAL_MD);
 
+    coeffs.ac1 = SWAP_2BYTES(coeffs.ac1);
+    coeffs.ac2 = SWAP_2BYTES(coeffs.ac2);
+    coeffs.ac3 = SWAP_2BYTES(coeffs.ac3);
+    coeffs.ac4 = SWAP_2BYTES(coeffs.ac4);
+    coeffs.ac5 = SWAP_2BYTES(coeffs.ac5);
+    coeffs.ac6 = SWAP_2BYTES(coeffs.ac6);
+    coeffs.b1  = SWAP_2BYTES(coeffs.b1);
+    coeffs.b2  = SWAP_2BYTES(coeffs.b2);
+    coeffs.mb  = SWAP_2BYTES(coeffs.mb);
+    coeffs.mc  = SWAP_2BYTES(coeffs.mc);
+    coeffs.md  = SWAP_2BYTES(coeffs.md);
+
     return ret;
 }
 
@@ -33,19 +51,22 @@ static int readRawTemperature(int32_t *raw_temp)
 {
 	int ret;
 
+    if (i2c_fd <= 0) {
+        return -1;
+    }
 	ret = wiringPiI2CWriteReg8(i2c_fd, BMP085_REGISTER_CONTROL, BMP085_REGISTER_READTEMPCMD);
 	if(ret < 0) {
 		printf("ERROR %s() Can't write 0x%X to BMP085 register 0x%X.\n", __FUNCTION__,
 				BMP085_REGISTER_CONTROL, BMP085_REGISTER_READTEMPCMD);
 		return -1;
 	}
-	delay(5);
+    sleep(1);
 	ret = wiringPiI2CReadReg16(i2c_fd, BMP085_REGISTER_TEMPDATA);
 	if(ret < 0) {
 		printf("ERROR %s() Can't read BMP085 register 0x%X.\n", __FUNCTION__, BMP085_REGISTER_TEMPDATA);
 		return -1;
 	}
-	*raw_temp = ret;
+    *raw_temp = SWAP_2BYTES(ret);
 
 	return 0;
 }
@@ -54,6 +75,9 @@ static int readRawPressure(int32_t *raw_pressure)
 {
 	int ret = 0;
 
+    if (i2c_fd <= 0) {
+        return -1;
+    }
 	ret = wiringPiI2CWriteReg8(i2c_fd, BMP085_REGISTER_CONTROL, BMP085_REGISTER_READPRESSURECMD + (mode << 6));
 	if(ret < 0) {
 		printf("ERROR %s() Can't write 0x%X to BMP085 register 0x%X.\n", __FUNCTION__,
@@ -75,20 +99,21 @@ static int readRawPressure(int32_t *raw_pressure)
 			delay(26);
 			break;
 	}
+    sleep(1);
 
 	ret = wiringPiI2CReadReg16(i2c_fd, BMP085_REGISTER_PRESSUREDATA);
 	if(ret < 0) {
 		printf("ERROR %s() Can't read BMP085 register 0x%X.\n", __FUNCTION__, BMP085_REGISTER_PRESSUREDATA);
 		return -1;
 	}
-	*raw_pressure = (uint32_t)ret << 8;
-	ret = wiringPiI2CReadReg8(i2c_fd, BMP085_REGISTER_PRESSUREDATA + 2);
+    *raw_pressure = SWAP_2BYTES(ret) << 8;
+    ret = wiringPiI2CReadReg8(i2c_fd, BMP085_REGISTER_PRESSUREDATA + 2);
 	if(ret < 0) {
 		printf("ERROR %s() Can't read BMP085 register 0x%X.\n", __FUNCTION__, BMP085_REGISTER_PRESSUREDATA + 2);
 		return -1;
 	}
 	*raw_pressure += (uint32_t)ret;
-	*raw_pressure >>= (8 - mode);
+    *raw_pressure >>= (8 - mode);
 
 	return 0;
 }
@@ -128,9 +153,6 @@ float get_temperature(int *raw_temperature_reg)
 	float temperature;
 	int32_t raw_temp;	//	UT in datasheet
 	int32_t x1, x2, b5;     // following datasheet convention
-
-	if (i2c_fd <= 0)
-		return -100.;
 
 	if (readRawTemperature(&raw_temp) < 0)
 		return -100.;
@@ -199,7 +221,6 @@ float get_altitude(float pressure, float temp)
 	float meters = (((float)pow((sea_level/pressure), 0.190223f) - 1.0f)
 				    * (temp + 273.15f)) / 0.0065f;
 
-//	meters = 44330. * (1. - pow(pressure / sea_level, (1. / 5.255)));
-//	printf("%f\n", meters);
+//    meters = 44330. * (1. - pow(pressure / sea_level, (1. / 5.255)));
 	return meters;
 }

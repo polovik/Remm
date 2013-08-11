@@ -285,7 +285,7 @@ int main(int argc, char *argv[])
 
 	init_gps();
 
-	init_bmp085(BMP085_MODE_ULTRALOWPOWER);
+    init_bmp085(BMP085_MODE_ULTRAHIGHRES);
 	temperature = get_temperature(&raw_temperature_reg);
 	pressure = get_pressure(raw_temperature_reg);
 	altitude = get_altitude(pressure, temperature);
