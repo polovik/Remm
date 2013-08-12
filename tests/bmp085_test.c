@@ -20,7 +20,7 @@ static void test_get_temperature(void)
 	float temp;
 	int raw_temperature_reg;
 
-	set_bmp085_measure(MEASURE_TEMPERATURE_MODE);
+    set_testing_module(MODULE_BMP085_TEMPERATURE);
 	temp = get_temperature(&raw_temperature_reg);
 	TEST_ASSERT(raw_temperature_reg == 2400);
 	TEST_ASSERT(temp == 15.);
@@ -31,10 +31,10 @@ static void test_get_pressure(void)
 	float temp, pressure;
 	int raw_temperature_reg;
 
-	set_bmp085_measure(MEASURE_TEMPERATURE_MODE);
+    set_testing_module(MODULE_BMP085_TEMPERATURE);
 	temp = get_temperature(&raw_temperature_reg);
 	TEST_ASSERT(temp == 15.);
-	set_bmp085_measure(MEASURE_PRESSURE);
+    set_testing_module(MODULE_BMP085_PRESSURE);
 	pressure = get_pressure(raw_temperature_reg);
 	TEST_ASSERT((int)(pressure * 100) == 69964);
 }
@@ -44,10 +44,10 @@ static void test_get_altitude(void)
 	float temp, pressure, altitude;
 	int raw_temperature_reg;
 
-	set_bmp085_measure(MEASURE_TEMPERATURE_MODE);
+    set_testing_module(MODULE_BMP085_TEMPERATURE);
 	temp = get_temperature(&raw_temperature_reg);
 	TEST_ASSERT(temp == 15.);
-	set_bmp085_measure(MEASURE_PRESSURE);
+    set_testing_module(MODULE_BMP085_PRESSURE);
 	pressure = get_pressure(raw_temperature_reg);
 	TEST_ASSERT((int)(pressure * 100) == 69964);
 	altitude = get_altitude(pressure, temp);

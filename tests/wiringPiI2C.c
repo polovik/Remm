@@ -1,13 +1,16 @@
 #include "wiringPiI2C.h"
 #include "../server/bmp085.h"
+#include "../server/hmc5883l.h"
 
 #define I2C_FD	10
 
-static measure_type_e bmp085_measure_type;
+#define SWAP_2BYTES(x) (((x & 0xFFFF) >> 8) | ((x & 0xFF) << 8))
 
-void set_bmp085_measure(measure_type_e type)
+static module_e testing_module;
+
+void set_testing_module(module_e module)
 {
-	bmp085_measure_type = type;
+    testing_module = module;
 }
 
 int wiringPiI2CReadReg8(int fd, int reg)
@@ -17,18 +20,35 @@ int wiringPiI2CReadReg8(int fd, int reg)
 	if (fd != I2C_FD)
 		return -1;
 
-	switch (reg) {
-		case BMP085_REGISTER_CHIPID:
-			value = BMP085_CHIPID;
-			break;
-		case BMP085_REGISTER_PRESSUREDATA + 2:
-			value = (23843 & 0xFF) << 8;
-			break;
-		default:
-			value = -1;
-			break;
-	}
-
+    if ((testing_module == MODULE_BMP085_PRESSURE) || (testing_module == MODULE_BMP085_TEMPERATURE)) {
+        switch (reg) {
+            case BMP085_REGISTER_CHIPID:
+                value = BMP085_CHIPID;
+                break;
+            case BMP085_REGISTER_PRESSUREDATA + 2:
+                value = (23843 & 0xFF) << 8;
+                break;
+            default:
+                value = -1;
+                break;
+        }
+    }
+    if (testing_module == MODULE_HMC5883L) {
+        switch (reg) {
+            case HMC5883L_REGISTER_IDENTIFICATION_A:
+                value = 0x48;
+                break;
+            case HMC5883L_REGISTER_IDENTIFICATION_B:
+                value = 0x34;
+                break;
+            case HMC5883L_REGISTER_IDENTIFICATION_C:
+                value = 0x33;
+                break;
+            default:
+                value = -1;
+                break;
+        }
+    }
 	return value;
 }
 
@@ -74,9 +94,9 @@ int wiringPiI2CReadReg16(int fd, int reg)
 			value = 2868;
 			break;
 		case BMP085_REGISTER_TEMPDATA:	//	BMP085_REGISTER_PRESSUREDATA
-			if (bmp085_measure_type == MEASURE_TEMPERATURE_MODE)
+            if (testing_module == MODULE_BMP085_TEMPERATURE)
 				value = 27898;
-			else if (bmp085_measure_type == MEASURE_PRESSURE)
+            else if (testing_module == MODULE_BMP085_PRESSURE)
 				value = (23843 >> 8) << 8;
 			else
 				value = -1;
@@ -86,7 +106,10 @@ int wiringPiI2CReadReg16(int fd, int reg)
 			break;
 	}
 
-	return value;
+    if (value != -1)
+        return SWAP_2BYTES(value);
+    else
+        return -1;
 }
 
 int wiringPiI2CWriteReg8(int fd, int reg, int data)
@@ -96,27 +119,50 @@ int wiringPiI2CWriteReg8(int fd, int reg, int data)
 	if (fd != I2C_FD)
 		return -1;
 
-	switch (reg) {
-		case BMP085_REGISTER_CONTROL:
-			if (bmp085_measure_type == MEASURE_TEMPERATURE_MODE)
-				ret = (data == BMP085_REGISTER_READTEMPCMD);
-			else if (bmp085_measure_type == MEASURE_PRESSURE)
-				ret = (data == BMP085_REGISTER_READPRESSURECMD);
-			else
-				ret = -1;
-			break;
-		default:
-			ret = -1;
-			break;
+    if ((testing_module == MODULE_BMP085_PRESSURE) || (testing_module == MODULE_BMP085_TEMPERATURE)) {
+        switch (reg) {
+            case BMP085_REGISTER_CONTROL:
+                if (testing_module == MODULE_BMP085_TEMPERATURE)
+                    ret = (data == BMP085_REGISTER_READTEMPCMD);
+                else if (testing_module == MODULE_BMP085_PRESSURE)
+                    ret = (data == BMP085_REGISTER_READPRESSURECMD);
+                else
+                    ret = -1;
+                break;
+            default:
+                ret = -1;
+                break;
+        }
 	}
-
+    if (testing_module == MODULE_HMC5883L) {
+        switch (reg) {
+            case HMC5883L_REGISTER_CONFIGURATION_A:
+                ret = 1;
+                break;
+            case HMC5883L_REGISTER_CONFIGURATION_B:
+                ret = 1;
+                break;
+            case HMC5883L_REGISTER_STATUS:
+                ret = 1;
+                break;
+            default:
+                ret = -1;
+                break;
+        }
+    }
 	return ret;
 }
 
 int wiringPiI2CSetup(const int devId)
 {
-	if (devId == 0x77)
-		return I2C_FD;
+    if ((testing_module == MODULE_BMP085_PRESSURE) || (testing_module == MODULE_BMP085_TEMPERATURE)) {
+        if (devId == 0x77)
+            return I2C_FD;
+    }
+    if (testing_module == MODULE_HMC5883L) {
+        if (devId == 0x3C)
+            return I2C_FD;
+    }
 
 	return -1;
 }

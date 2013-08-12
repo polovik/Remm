@@ -2,11 +2,12 @@
 #define WIRINGPII2C_H_
 
 typedef enum {
-	MEASURE_TEMPERATURE_MODE,
-	MEASURE_PRESSURE
-} measure_type_e;
+    MODULE_BMP085_TEMPERATURE,
+    MODULE_BMP085_PRESSURE,
+    MODULE_HMC5883L
+} module_e;
 
-void set_bmp085_measure(measure_type_e type);
+void set_testing_module(module_e module);
 
 //int wiringPiI2CRead(int fd)
 int wiringPiI2CReadReg8(int fd, int reg);

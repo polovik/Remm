@@ -18,6 +18,7 @@
 #include "utils.h"
 #include "gps.h"
 #include "bmp085.h"
+#include "hmc5883l.h"
 
 #define STATUS_PACKET_TIMEOUT	500
 
@@ -284,6 +285,10 @@ int main(int argc, char *argv[])
     	return 1;
 
 	init_gps();
+
+    axes_t axes;
+    init_hmc5883l(5, 4, HMC5883L_MODE_SINGLE_MEASUREMENT);
+    get_axes(&axes);
 
     init_bmp085(BMP085_MODE_ULTRAHIGHRES);
 	temperature = get_temperature(&raw_temperature_reg);
