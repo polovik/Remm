@@ -1,9 +1,8 @@
 #ifndef HMC5883L_H
 #define HMC5883L_H
 
-#define HMC5883L_I2C_ADDRESS_R             (0x3D)
-#define HMC5883L_I2C_ADDRESS_W             (0x3C)
-#define HMC5883L_CHIPID                	   (0x483433) // id registers A,B,C
+#define HMC5883L_I2C_ADDRESS    (0x1E)
+#define HMC5883L_CHIPID         (0x483433) // id registers A,B,C
 
 /*	HMC5883L REGISTERS	*/
 enum {

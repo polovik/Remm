@@ -17,6 +17,7 @@
 #include "gpio.h"
 #include "utils.h"
 #include "gps.h"
+#include "i2c.h"
 #include "bmp085.h"
 #include "hmc5883l.h"
 
@@ -286,17 +287,19 @@ int main(int argc, char *argv[])
 
 	init_gps();
 
-    axes_t axes;
-    init_hmc5883l(5, 4, HMC5883L_MODE_SINGLE_MEASUREMENT);
-    get_axes(&axes);
+    if (init_i2c() == 0) {
+        axes_t axes;
+        init_hmc5883l(5, 4, HMC5883L_MODE_SINGLE_MEASUREMENT);
+        get_axes(&axes);
 
-    init_bmp085(BMP085_MODE_ULTRAHIGHRES);
-	temperature = get_temperature(&raw_temperature_reg);
-	pressure = get_pressure(raw_temperature_reg);
-	altitude = get_altitude(pressure, temperature);
-	printf("INFO  %s() Temperature = %f C\n", __FUNCTION__, temperature);
-	printf("INFO  %s() Pressure = %f Pa\n", __FUNCTION__, pressure);
-	printf("INFO  %s() Altitude = %f m\n", __FUNCTION__, altitude);
+        init_bmp085(BMP085_MODE_ULTRAHIGHRES);
+        temperature = get_temperature(&raw_temperature_reg);
+        pressure = get_pressure(raw_temperature_reg);
+        altitude = get_altitude(pressure, temperature);
+        printf("INFO  %s() Temperature = %f C\n", __FUNCTION__, temperature);
+        printf("INFO  %s() Pressure = %f Pa\n", __FUNCTION__, pressure);
+        printf("INFO  %s() Altitude = %f m\n", __FUNCTION__, altitude);
+    }
 
 	exit_thread = 0;
 	ret = pthread_create(&command_rx_thread, NULL, command_rx, NULL);

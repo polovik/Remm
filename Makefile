@@ -13,10 +13,11 @@ all:
 	$(ARM_CC) $(SERVER)/camera.c -c -o $(SERVER)/camera.o $(ARM_CFLAGS)
 	$(ARM_CC) $(SERVER)/gpio.c -c -o $(SERVER)/gpio.o $(ARM_CFLAGS)
 	$(ARM_CC) $(SERVER)/gps.c -c -o $(SERVER)/gps.o $(ARM_CFLAGS)
+	$(ARM_CC) $(SERVER)/i2c.c -c -o $(SERVER)/i2c.o $(ARM_CFLAGS)
 	$(ARM_CC) $(SERVER)/bmp085.c -c -o $(SERVER)/bmp085.o $(ARM_CFLAGS)
 	$(ARM_CC) $(SERVER)/hmc5883l.c -c -o $(SERVER)/hmc5883l.o $(ARM_CFLAGS)
 	$(ARM_CC) $(SERVER)/main.c -c -o $(SERVER)/main.o $(ARM_CFLAGS)
-	$(ARM_CC) $(SERVER)/utils.o $(SERVER)/camera.o $(SERVER)/gpio.o $(SERVER)/gps.o $(SERVER)/bmp085.o $(SERVER)/hmc5883l.o $(SERVER)/main.o \
+	$(ARM_CC) $(SERVER)/utils.o $(SERVER)/camera.o $(SERVER)/gpio.o $(SERVER)/gps.o $(SERVER)/i2c.o $(SERVER)/bmp085.o $(SERVER)/hmc5883l.o $(SERVER)/main.o \
 		-o $(SERVER)/$(SERVER) $(ARM_LDFLAGS) $(ARM_LIBS)
 
 clean:
@@ -24,6 +25,7 @@ clean:
 	rm -f $(SERVER)/camera.o
 	rm -f $(SERVER)/gpio.o
 	rm -f $(SERVER)/gps.o
+	rm -f $(SERVER)/i2c.o
 	rm -f $(SERVER)/bmp085.o
 	rm -f $(SERVER)/hmc5883l.o
 	rm -f $(SERVER)/main.o
