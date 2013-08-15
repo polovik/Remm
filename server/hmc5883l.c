@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <unistd.h>
+#include <math.h>
 #include "i2c.h"
 #include "hmc5883l.h"
 
@@ -86,13 +87,13 @@ int init_hmc5883l(int field_range, int data_rate, hmc5883l_mode_t mode)
         printf("ERROR %s() Try set incorrect mode(0x%X) HMC5883L.\n", __FUNCTION__, mode);
         return -1;
     }
-    data[0] = HMC5883L_REGISTER_STATUS;
+    data[0] = HMC5883L_REGISTER_MODE;
     data[1] = mode_reg;
     data_len = 2;
     ret = i2c_write(HMC5883L_I2C_ADDRESS, data, data_len);
     if (ret < 0) {
         printf("ERROR %s() Can't write 0x%02X to HMC5883L register 0x%02X.\n", __FUNCTION__,
-                mode_reg, HMC5883L_REGISTER_STATUS);
+                mode_reg, HMC5883L_REGISTER_MODE);
         return -1;
     }
 
@@ -109,26 +110,30 @@ void release_hmc5883l(int signum)
 
 int get_heading(axes_t axes)
 {
-//    (scaled_x, scaled_y, scaled_z) = self.getAxes()
+    float heading_rad = atan2(axes.y, axes.x);
+    printf("INFO  %s() Heading radians: %f\n", __FUNCTION__, heading_rad);
+
+    //  Correct for reversed heading
+//    if (heading_rad < 0)
+//        heading_rad += 2 * M_PI;
+
+    //  Check for wrap and compensate
+//    if (heading_rad > 2 * M_PI)
+//        heading_rad -= 2 * M_PI;
+
+    //  Convert to degrees from radians
+//    float heading_deg = heading_rad * 180 / M_PI;
+
+//    printf("INFO  %s() Heading degrees: %f\n", __FUNCTION__, heading_deg);
 
 //    headingRad = math.atan2(scaled_y, scaled_x)
 //      http://www.ngdc.noaa.gov/geomag-web/#declination
 //    headingRad += self.declination    MINSK: 7° 17'
 
-//    # Correct for reversed heading
-//    if(headingRad < 0):
-//            headingRad += 2*math.pi
-
-//    # Check for wrap and compensate
-//    if(headingRad > 2*math.pi):
-//            headingRad -= 2*math.pi
-
-//    # Convert to degrees from radians
-//    headingDeg = headingRad * 180/math.pi
 //    degrees = math.floor(headingDeg)
 //    minutes = round(((headingDeg - degrees) * 60))
 //    return (degrees, minutes)
-    return -1;
+    return 0;
 }
 
 int get_axes(axes_t *axes)
@@ -138,8 +143,6 @@ int get_axes(axes_t *axes)
     short axis_reg;
     uint8_t data[32];
     uint8_t data_len;
-
-    sleep(1);
 
     /*  Check status    */
     data[0] = HMC5883L_REGISTER_STATUS;
@@ -157,13 +160,13 @@ int get_axes(axes_t *axes)
         return -1;
     }
     data_ready = data[0] & 0x01;
-    printf("INFO  %s() HMC5883L status: LOCK(%d), READY(%d)", __FUNCTION__, (data[0] & 0x02) >> 1, data_ready);
+//    printf("INFO  %s() HMC5883L status: LOCK(%d), READY(%d)\n", __FUNCTION__, (data[0] & 0x02) >> 1, data_ready);
     if (data_ready == 0) {
         printf("ERROR %s() HMC5883L data not ready yet.\n", __FUNCTION__);
         return -1;
     }
 
-    /*  Reading Axis X */
+    /*  Reading Axes XZY */
     data[0] = HMC5883L_REGISTER_DATA_X_LSB;
     data_len = 1;
     ret = i2c_write(HMC5883L_I2C_ADDRESS, data, data_len);
@@ -172,71 +175,26 @@ int get_axes(axes_t *axes)
                __FUNCTION__, HMC5883L_REGISTER_DATA_X_LSB);
         return -1;
     }
+
+    usleep(6000);
+
     data_len = 6;
     ret = i2c_read(HMC5883L_I2C_ADDRESS, data, data_len);
     if (ret < 0) {
         printf("ERROR %s() Can't read HMC5883L AXES registers.\n", __FUNCTION__);
         return -1;
     }
-    printf("INFO  %s() HMC5883L AXES: 0x%02X, 0x%02X, 0x%02X, 0x%02X, 0x%02X, 0x%02X\n",
-           __FUNCTION__, data[0], data[1], data[2], data[3], data[4], data[5]);
+//    printf("INFO  %s() HMC5883L AXES: 0x%02X, 0x%02X, 0x%02X, 0x%02X, 0x%02X, 0x%02X\n",
+//           __FUNCTION__, data[0], data[1], data[2], data[3], data[4], data[5]);
 
-//    ret = wiringPiI2CRead(i2c_read_fd);
-    if (ret < 0) {
-        printf("ERROR %s() HMC5883L Can't read axis X MSB.\n", __FUNCTION__);
-        return -1;
-    }
-    axis_reg = ret << 8;
-//    ret = wiringPiI2CRead(i2c_read_fd);
-    if (ret < 0) {
-        printf("ERROR %s() HMC5883L Can't read axis X LSB.\n", __FUNCTION__);
-        return -1;
-    }
-    axis_reg = axis_reg | ret;
-    if (axis_reg == -4096) {
-        printf("ERROR %s() HMC5883L Axis X - Out of range. Try choose wider range\n", __FUNCTION__);
-        return -1;
-    }
+    axis_reg = (data[1] << 8) | data[0];
     axes->x = axis_reg * scale;
-
-    /*  Reading Axis Z */
-//    ret = wiringPiI2CRead(i2c_read_fd);
-    if (ret < 0) {
-        printf("ERROR %s() HMC5883L Can't read axis Z MSB.\n", __FUNCTION__);
-        return -1;
-    }
-    axis_reg = ret << 8;
-//    ret = wiringPiI2CRead(i2c_read_fd);
-    if (ret < 0) {
-        printf("ERROR %s() HMC5883L Can't read axis Z LSB.\n", __FUNCTION__);
-        return -1;
-    }
-    axis_reg = axis_reg | ret;
-    if (axis_reg == -4096) {
-        printf("ERROR %s() HMC5883L Axis Z - Out of range. Try choose wider range\n", __FUNCTION__);
-        return -1;
-    }
+    axis_reg = (data[3] << 8) | data[2];
     axes->z = axis_reg * scale;
-
-    /*  Reading Axis Y */
-//    ret = wiringPiI2CRead(i2c_read_fd);
-    if (ret < 0) {
-        printf("ERROR %s() HMC5883L Can't read axis Y MSB.\n", __FUNCTION__);
-        return -1;
-    }
-    axis_reg = ret << 8;
-//    ret = wiringPiI2CRead(i2c_read_fd);
-    if (ret < 0) {
-        printf("ERROR %s() HMC5883L Can't read axis Y LSB.\n", __FUNCTION__);
-        return -1;
-    }
-    axis_reg = axis_reg | ret;
-    if (axis_reg == -4096) {
-        printf("ERROR %s() HMC5883L Axis Y - Out of range. Try choose wider range\n", __FUNCTION__);
-        return -1;
-    }
+    axis_reg = (data[5] << 8) | data[4];
     axes->y = axis_reg * scale;
 
+//    printf("INFO  %s() HMC5883L scale = %f\n", __FUNCTION__, scale);
     printf("INFO  %s() HMC5883L axis X = %f\n", __FUNCTION__, axes->x);
     printf("INFO  %s() HMC5883L axis Y = %f\n", __FUNCTION__, axes->y);
     printf("INFO  %s() HMC5883L axis Z = %f\n", __FUNCTION__, axes->z);

@@ -289,8 +289,13 @@ int main(int argc, char *argv[])
 
     if (init_i2c() == 0) {
         axes_t axes;
-        init_hmc5883l(5, 4, HMC5883L_MODE_SINGLE_MEASUREMENT);
-        get_axes(&axes);
+        init_hmc5883l(5, 0, HMC5883L_MODE_CONTINUOUS_MEASUREMENT);
+        while (1) {
+            get_axes(&axes);
+            get_heading(axes);
+            usleep(500000);
+        }
+        exit(0);
 
         init_bmp085(BMP085_MODE_ULTRAHIGHRES);
         temperature = get_temperature(&raw_temperature_reg);
