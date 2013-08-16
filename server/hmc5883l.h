@@ -26,7 +26,8 @@ typedef enum {
     HMC5883L_MODE_CONTINUOUS_MEASUREMENT = 0,
     HMC5883L_MODE_SINGLE_MEASUREMENT     = 1,
     HMC5883L_MODE_IDLE_MODE              = 2,
-    HMC5883L_MODE_IDLE_MODE2             = 3
+    HMC5883L_MODE_IDLE_MODE2             = 3,
+    HMC5883L_SELF_TEST                   = 8
 } hmc5883l_mode_t;
 
 /* HMC5883L magnetic field axes values */
@@ -39,7 +40,9 @@ typedef struct {
 int init_hmc5883l(int field_range, int data_rate, hmc5883l_mode_t mode);
 void release_hmc5883l(int signum);
 
-int get_axes(axes_t *axes);
-int get_heading(axes_t axes);
+int hmc5883l_get_status(int *locked, int *ready);
+int hmc5883l_get_axes(axes_t *axes);
+int hmc5883l_get_heading(axes_t axes);
+int hmc5883l_self_test();
 
 #endif // HMC5883L_H

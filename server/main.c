@@ -289,10 +289,13 @@ int main(int argc, char *argv[])
 
     if (init_i2c() == 0) {
         axes_t axes;
+
+        hmc5883l_self_test();
+        sleep(5);
         init_hmc5883l(5, 0, HMC5883L_MODE_CONTINUOUS_MEASUREMENT);
         while (1) {
-            get_axes(&axes);
-            get_heading(axes);
+            hmc5883l_get_axes(&axes);
+            hmc5883l_get_heading(axes);
             usleep(500000);
         }
         exit(0);
