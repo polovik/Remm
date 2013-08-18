@@ -20,6 +20,7 @@
 #include "i2c.h"
 #include "bmp085.h"
 #include "hmc5883l.h"
+#include "l3g4200d.h"
 
 #define STATUS_PACKET_TIMEOUT	500
 
@@ -289,6 +290,15 @@ int main(int argc, char *argv[])
 
     if (init_i2c() == 0) {
         axes_t axes;
+
+        init_l3g4200d(L3G4200D_RANGE_2000DPS);
+        while (1) {
+            l3g4200d_angular_rates_s rates;
+            int temperature;
+            l3g4200d_get_data(&rates);
+            l3g4200d_get_temperature(&temperature);
+            usleep(500000);
+        }
 
         hmc5883l_self_test();
         sleep(5);
