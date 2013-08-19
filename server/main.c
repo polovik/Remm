@@ -18,6 +18,7 @@
 #include "utils.h"
 #include "gps.h"
 #include "i2c.h"
+#include "adxl345.h"
 #include "bmp085.h"
 #include "hmc5883l.h"
 #include "l3g4200d.h"
@@ -289,8 +290,6 @@ int main(int argc, char *argv[])
 	init_gps();
 
     if (init_i2c() == 0) {
-        axes_t axes;
-
         init_l3g4200d(L3G4200D_RANGE_2000DPS);
         while (1) {
             l3g4200d_angular_rates_s rates;
@@ -300,10 +299,18 @@ int main(int argc, char *argv[])
             usleep(500000);
         }
 
+        init_adxl345(ADXL345_DATARATE_100_HZ, ADXL345_RANGE_2_G);
+        while (1) {
+            adxl345_axes_t axes;
+            adxl345_get_axes(&axes);
+            usleep(500000);
+        }
+
         hmc5883l_self_test();
         sleep(5);
         init_hmc5883l(5, 0, HMC5883L_MODE_CONTINUOUS_MEASUREMENT);
         while (1) {
+            axes_t axes;
             hmc5883l_get_axes(&axes);
             hmc5883l_get_heading(axes);
             usleep(500000);
