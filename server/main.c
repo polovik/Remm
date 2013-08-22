@@ -22,6 +22,7 @@
 #include "bmp085.h"
 #include "hmc5883l.h"
 #include "l3g4200d.h"
+#include "battery.h"
 
 #define STATUS_PACKET_TIMEOUT	500
 
@@ -290,6 +291,13 @@ int main(int argc, char *argv[])
 	init_gps();
 
     if (init_i2c() == 0) {
+        init_battery(1);
+        while (1) {
+            float voltage;
+            get_voltage(&voltage);
+            usleep(1000000);
+        }
+
         init_l3g4200d(L3G4200D_RANGE_2000DPS);
         while (1) {
             l3g4200d_angular_rates_s rates;
