@@ -128,7 +128,6 @@ int hmc5883l_get_heading(axes_t axes)
 
     //  Convert to degrees from radians
 //    float heading_deg = heading_rad * 180 / M_PI;
-
 //    printf("INFO  %s() Heading degrees: %f\n", __FUNCTION__, heading_deg);
 
 //    headingRad = math.atan2(scaled_y, scaled_x)
@@ -201,18 +200,20 @@ int hmc5883l_get_axes(axes_t *axes)
 
     axis_reg = (data[1] << 8) | data[0];
     axes->x = axis_reg * scale;
+    printf("INFO  %s() HMC5883L axis X(0x%04X) = %f\n", __FUNCTION__, axis_reg, axes->x);
     axis_reg = (data[3] << 8) | data[2];
     axes->z = axis_reg * scale;
+    printf("INFO  %s() HMC5883L axis Z(0x%04X) = %f\n", __FUNCTION__, axis_reg, axes->z);
     axis_reg = (data[5] << 8) | data[4];
     axes->y = axis_reg * scale;
+    printf("INFO  %s() HMC5883L axis Y(0x%04X) = %f\n", __FUNCTION__, axis_reg, axes->y);
 
 //    printf("INFO  %s() HMC5883L scale = %f\n", __FUNCTION__, scale);
-    printf("INFO  %s() HMC5883L axis X = %f\n", __FUNCTION__, axes->x);
-    printf("INFO  %s() HMC5883L axis Y = %f\n", __FUNCTION__, axes->y);
-    printf("INFO  %s() HMC5883L axis Z = %f\n", __FUNCTION__, axes->z);
     return 0;
 }
 
+//  X offset =  1218.559937, Y offset =  1139.199951, Z offset =  1164.799927
+//  X offset = -1192.959961, Y offset = -1157.119995, Z offset = -1126.400024
 int hmc5883l_self_test()
 {
     axes_t axes;

@@ -1,8 +1,7 @@
 #ifndef L3G4200D_H
 #define L3G4200D_H
 
-#define L3G4200D_I2C_ADDRESS         (0x6B)        // 1101001
-#define L3G4200D_POLL_TIMEOU         (100)         // Maximum number of read attempts
+#define L3G4200D_I2C_ADDRESS         (0x69)        // 01101001
 #define L3G4200D_CHIP_ID             (0b11010011)
 
 #define L3G4200D_SENSITIVITY_250DPS  (0.00875F)      // Roughly 22/256 for fixed point match

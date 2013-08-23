@@ -1,7 +1,7 @@
 #ifndef BATTERY_H
 #define BATTERY_H
 
-#define ADC_I2C_ADDRESS                (0xA7)
+#define ADC_I2C_ADDRESS                (0x16)
 #define ADC_CHIPID                     (0xAD)
 
 /*	ADC REGISTERS	*/

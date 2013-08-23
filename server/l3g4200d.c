@@ -139,41 +139,45 @@ int l3g4200d_get_data(l3g4200d_angular_rates_s *rates)
 {
     int ret;
     short angular_rate;
-    uint8_t data[32];
-    uint8_t data_len;
-
-    /*  Reading Axes XZY */
-    data[0] = L3G4200D_REGISTER_OUT_X_L;
-    data_len = 1;
-    ret = i2c_write(L3G4200D_I2C_ADDRESS, data, data_len);
-    if (ret < 0) {
-        printf("ERROR %s() Can't select L3G4200D register 0x%02X.\n",
-               __FUNCTION__, L3G4200D_REGISTER_OUT_X_L);
-        return -1;
-    }
-
-//    usleep(67000);
-
-    data_len = 6;
-    ret = i2c_read(L3G4200D_I2C_ADDRESS, data, data_len);
-    if (ret < 0) {
-        printf("ERROR %s() Can't read L3G4200D Angular rates registers.\n", __FUNCTION__);
-        return -1;
-    }
-    printf("INFO  %s() L3G4200D Rates: 0x%02X, 0x%02X, 0x%02X, 0x%02X, 0x%02X, 0x%02X\n",
-           __FUNCTION__, data[0], data[1], data[2], data[3], data[4], data[5]);
-
-    angular_rate = (data[1] << 8) | data[0];
-    rates->x = angular_rate * sensitivity;
-    angular_rate = (data[3] << 8) | data[2];
-    rates->z = angular_rate * sensitivity;
-    angular_rate = (data[5] << 8) | data[4];
-    rates->y = angular_rate * sensitivity;
+    uint8_t data;
 
     printf("INFO  %s() L3G4200D sensitivity = %f\n", __FUNCTION__, sensitivity);
+
+    /*  Reading Axes XZY */
+    ret = i2c_read_byte(L3G4200D_I2C_ADDRESS, L3G4200D_REGISTER_OUT_X_L, &data, "L3G4200D");
+    if (ret < 0)
+        return -1;
+    angular_rate = data;
+    ret = i2c_read_byte(L3G4200D_I2C_ADDRESS, L3G4200D_REGISTER_OUT_X_H, &data, "L3G4200D");
+    if (ret < 0)
+        return -1;
+    angular_rate = (data << 8) | angular_rate;
+    rates->x = angular_rate * sensitivity;
     printf("INFO  %s() L3G4200D angular rate X = %f\n", __FUNCTION__, rates->x);
+
+    ret = i2c_read_byte(L3G4200D_I2C_ADDRESS, L3G4200D_REGISTER_OUT_Y_L, &data, "L3G4200D");
+    if (ret < 0)
+        return -1;
+    angular_rate = data;
+    ret = i2c_read_byte(L3G4200D_I2C_ADDRESS, L3G4200D_REGISTER_OUT_Y_H, &data, "L3G4200D");
+    if (ret < 0)
+        return -1;
+    angular_rate = (data << 8) | angular_rate;
+    rates->y = angular_rate * sensitivity;
     printf("INFO  %s() L3G4200D angular rate Y = %f\n", __FUNCTION__, rates->y);
+
+
+    ret = i2c_read_byte(L3G4200D_I2C_ADDRESS, L3G4200D_REGISTER_OUT_Z_L, &data, "L3G4200D");
+    if (ret < 0)
+        return -1;
+    angular_rate = data;
+    ret = i2c_read_byte(L3G4200D_I2C_ADDRESS, L3G4200D_REGISTER_OUT_Z_H, &data, "L3G4200D");
+    if (ret < 0)
+        return -1;
+    angular_rate = (data << 8) | angular_rate;
+    rates->z = angular_rate * sensitivity;
     printf("INFO  %s() L3G4200D angular rate Z = %f\n", __FUNCTION__, rates->z);
+
     return 0;
 }
 
