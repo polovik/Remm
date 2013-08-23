@@ -15,6 +15,7 @@
 *.exe
 *.out
 *.app
+server/server
 
 # Eclipse
 .cproject
@@ -26,3 +27,4 @@
 
 # Qt user project file
 clientQt.pro.user
+*creator.user*
