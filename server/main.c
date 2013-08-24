@@ -17,12 +17,7 @@
 #include "gpio.h"
 #include "utils.h"
 #include "gps.h"
-#include "i2c.h"
-#include "adxl345.h"
-#include "bmp085.h"
-#include "hmc5883l.h"
-#include "l3g4200d.h"
-#include "battery.h"
+#include "sensors.h"
 
 #define STATUS_PACKET_TIMEOUT	500
 
@@ -261,7 +256,7 @@ void destroy_connection(int signum)
 	release_camera(signum);
 	release_leds(signum);
 	release_gps(signum);
-	release_bmp085(signum);
+    release_sensors(signum);
 	exit_thread = 1;
 	if (pthread_join(command_rx_thread, NULL) != 0) {
 		perror("Joining to command_rx_thread");
@@ -273,10 +268,6 @@ int main(int argc, char *argv[])
 {
 	status_packet_s status_packet;
 	int ret;
-	float pressure;
-	float temperature;
-	float altitude;
-	int raw_temperature_reg;
 
 	status_packet.magic = MAGIC_STATUS;
 	memset(&server_ctx, 0x00, sizeof(server_ctx_s));
@@ -290,49 +281,7 @@ int main(int argc, char *argv[])
 
 	init_gps();
 
-    if (init_i2c() == 0) {
-        init_battery(1);
-        while (1) {
-            float voltage;
-            get_voltage(&voltage);
-            usleep(1000000);
-        }
-
-        init_l3g4200d(L3G4200D_RANGE_2000DPS);
-        while (1) {
-            l3g4200d_angular_rates_s rates;
-            int temperature;
-            l3g4200d_get_data(&rates);
-            l3g4200d_get_temperature(&temperature);
-            usleep(500000);
-        }
-
-        init_adxl345(ADXL345_DATARATE_100_HZ, ADXL345_RANGE_2_G);
-        while (1) {
-            adxl345_axes_t axes;
-            adxl345_get_axes(&axes);
-            usleep(500000);
-        }
-
-        hmc5883l_self_test();
-        sleep(5);
-        init_hmc5883l(5, 0, HMC5883L_MODE_CONTINUOUS_MEASUREMENT);
-        while (1) {
-            axes_t axes;
-            hmc5883l_get_axes(&axes);
-            hmc5883l_get_heading(axes);
-            usleep(500000);
-        }
-        exit(0);
-
-        init_bmp085(BMP085_MODE_ULTRAHIGHRES);
-        temperature = get_temperature(&raw_temperature_reg);
-        pressure = get_pressure(raw_temperature_reg);
-        altitude = get_altitude(pressure, temperature);
-        printf("INFO  %s() Temperature = %f C\n", __FUNCTION__, temperature);
-        printf("INFO  %s() Pressure = %f Pa\n", __FUNCTION__, pressure);
-        printf("INFO  %s() Altitude = %f m\n", __FUNCTION__, altitude);
-    }
+    init_sensors();
 
 	exit_thread = 0;
 	ret = pthread_create(&command_rx_thread, NULL, command_rx, NULL);

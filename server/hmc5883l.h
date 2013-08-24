@@ -35,14 +35,14 @@ typedef struct {
     float x;
     float y;
     float z;
-} axes_t;
+} hmc5883l_axes_t;
 
 int init_hmc5883l(int field_range, int data_rate, hmc5883l_mode_t mode);
 void release_hmc5883l(int signum);
 
 int hmc5883l_get_status(int *locked, int *ready);
-int hmc5883l_get_axes(axes_t *axes);
-int hmc5883l_get_heading(axes_t axes);
+int hmc5883l_get_axes(hmc5883l_axes_t *axes);
+int hmc5883l_get_heading(hmc5883l_axes_t axes);
 int hmc5883l_self_test();
 
 #endif // HMC5883L_H

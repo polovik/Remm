@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include "i2c.h"
-#include "battery.h"
+#include "adc.h"
 
-int init_battery(int rate)
+int init_adc(int rate)
 {
     int ret;
     uint8_t chip_id;
@@ -15,12 +15,12 @@ int init_battery(int rate)
         return -1;
     }
 
-    printf("INFO  %s() Battery is successfully initiated.\n", __FUNCTION__);
+    printf("INFO  %s() ADC is successfully initiated.\n", __FUNCTION__);
 
     return 0;
 }
 
-void release_battery(int signum)
+void release_adc(int signum)
 {
     printf("INFO  %s() Resources is released. signum=%d\n", __FUNCTION__, signum);
 }

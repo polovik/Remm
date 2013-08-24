@@ -18,9 +18,10 @@ all:
 	$(ARM_CC) $(SERVER)/bmp085.c -c -o $(SERVER)/bmp085.o $(ARM_CFLAGS)
 	$(ARM_CC) $(SERVER)/hmc5883l.c -c -o $(SERVER)/hmc5883l.o $(ARM_CFLAGS)
 	$(ARM_CC) $(SERVER)/l3g4200d.c -c -o $(SERVER)/l3g4200d.o $(ARM_CFLAGS)
-	$(ARM_CC) $(SERVER)/battery.c -c -o $(SERVER)/battery.o $(ARM_CFLAGS)
+	$(ARM_CC) $(SERVER)/adc.c -c -o $(SERVER)/adc.o $(ARM_CFLAGS)
+	$(ARM_CC) $(SERVER)/sensors.c -c -o $(SERVER)/sensors.o $(ARM_CFLAGS)
 	$(ARM_CC) $(SERVER)/main.c -c -o $(SERVER)/main.o $(ARM_CFLAGS)
-	$(ARM_CC) $(SERVER)/utils.o $(SERVER)/camera.o $(SERVER)/gpio.o $(SERVER)/gps.o $(SERVER)/i2c.o $(SERVER)/adxl345.o $(SERVER)/bmp085.o $(SERVER)/hmc5883l.o $(SERVER)/l3g4200d.o $(SERVER)/battery.o $(SERVER)/main.o \
+	$(ARM_CC) $(SERVER)/utils.o $(SERVER)/camera.o $(SERVER)/gpio.o $(SERVER)/gps.o $(SERVER)/i2c.o $(SERVER)/adxl345.o $(SERVER)/bmp085.o $(SERVER)/hmc5883l.o $(SERVER)/l3g4200d.o $(SERVER)/adc.o $(SERVER)/sensors.o $(SERVER)/main.o \
 		-o $(SERVER)/$(SERVER) $(ARM_LDFLAGS) $(ARM_LIBS)
 
 clean:
@@ -33,7 +34,8 @@ clean:
 	rm -f $(SERVER)/bmp085.o
 	rm -f $(SERVER)/hmc5883l.o
 	rm -f $(SERVER)/l3g4200d.o
-	rm -f $(SERVER)/battery.o
+	rm -f $(SERVER)/adc.o
+	rm -f $(SERVER)/sensors
 	rm -f $(SERVER)/main.o
 	rm -f $(SERVER)/$(SERVER)
 	

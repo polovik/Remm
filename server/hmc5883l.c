@@ -113,7 +113,7 @@ void release_hmc5883l(int signum)
     printf("INFO  %s() Resources is released.\n", __FUNCTION__);
 }
 
-int hmc5883l_get_heading(axes_t axes)
+int hmc5883l_get_heading(hmc5883l_axes_t axes)
 {
     float heading_rad = atan2(axes.y, axes.x);
     printf("INFO  %s() Heading radians: %f\n", __FUNCTION__, heading_rad);
@@ -170,7 +170,7 @@ int hmc5883l_get_status(int *locked, int *ready)
     return 0;
 }
 
-int hmc5883l_get_axes(axes_t *axes)
+int hmc5883l_get_axes(hmc5883l_axes_t *axes)
 {
     int ret;
     short axis_reg;
@@ -216,7 +216,7 @@ int hmc5883l_get_axes(axes_t *axes)
 //  X offset = -1192.959961, Y offset = -1157.119995, Z offset = -1126.400024
 int hmc5883l_self_test()
 {
-    axes_t axes;
+    hmc5883l_axes_t axes;
     hmc5883l_mode_t mode = (hmc5883l_mode_t)(HMC5883L_MODE_CONTINUOUS_MEASUREMENT | HMC5883L_SELF_TEST);
 
     if (init_hmc5883l(5, 4, mode) < 0) {
