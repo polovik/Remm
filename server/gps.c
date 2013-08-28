@@ -71,12 +71,27 @@ void *gps_polling(void *arg)
 int init_gps()
 {
 	int ret;
+    struct termios termios;
 
 	uart_fd = open("/dev/ttyAMA0", O_RDONLY | O_NOCTTY | O_NONBLOCK);
 	if (uart_fd < 0) {
 		perror("Open UART");
 		return uart_fd;
 	}
+
+    /*  Set speed 9600  */
+    if (tcgetattr(uart_fd, &termios) != 0) {
+        printf("ERROR %s() Can't get UART settings\n", __FUNCTION__);
+        return -1;
+    }
+    if (cfsetspeed(&termios, B9600) != 0) {
+        printf("ERROR %s() Can't set UART speed\n", __FUNCTION__);
+        return -1;
+    }
+    if (tcsetattr(uart_fd, TCSANOW, &termios) != 0) {
+        printf("ERROR %s() Can't apply UART settings\n", __FUNCTION__);
+        return -1;
+    }
 
     /*	Flush uart data	*/
     tcflush(uart_fd, TCIOFLUSH);

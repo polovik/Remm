@@ -27,8 +27,9 @@ typedef struct {
 	struct timeval send_status_timer;
 	/*	Position	*/
 	int height;		/**<	Height above ground */
-	int direction; /**<		Direction accordingly to North Pole	*/
-	int slope;		/**<	Slope accordingly to horizontal positions */
+    int heading;    /**<	Direction accordingly to North Pole	*/
+    int pitch;		/**<	Slope accordingly to horizontal positions up/down   */
+    int roll;		/**<	Slope accordingly to horizontal positions left/right */
 } server_ctx_s;
 
 static server_ctx_s server_ctx;
@@ -177,8 +178,8 @@ ipv4_check:
 
 do_cmd:
 		server_ctx.height = control_packet->height;
-		server_ctx.direction = control_packet->direction;
-		server_ctx.slope = control_packet->slope;
+        server_ctx.heading = control_packet->direction;
+        server_ctx.pitch = control_packet->slope;
         update_camera_settings(&control_packet->camera);
     }
 	printf("INFO  %s() Receiving commands is finished.\n", __FUNCTION__);
@@ -304,14 +305,15 @@ int main(int argc, char *argv[])
 		if (is_timer_expired(&server_ctx.send_status_timer)) {
 			double lat = 0.0;
 			double lon = 0.0;
-			status_packet.height = server_ctx.height;
-			status_packet.direction = server_ctx.direction;
+            status_packet.height = get_altitude();
+            status_packet.heading = get_heading();
 			if (get_gps_pos(&lat, &lon)) {
 				status_packet.gps_latitude = lat;
 				status_packet.gps_longitude = lon;
 			}
-			status_packet.slope = server_ctx.slope;
-			status_packet.battery_charge = get_battery_charge();
+            status_packet.pitch = get_pitch();
+            status_packet.roll = get_roll();
+            status_packet.battery_charge = get_battery_charge();
 
 			send_datagram(&status_packet, sizeof(status_packet_s));
 			add_timer(STATUS_PACKET_TIMEOUT, &server_ctx.send_status_timer);

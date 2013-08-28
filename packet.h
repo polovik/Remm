@@ -35,10 +35,11 @@ typedef struct {
 typedef struct {
 	magic_e magic;
 	int height;		/**<	Height above ground */
-	int direction; /**<		Direction accordingly to North Pole	*/
+    int heading;    /**<	Direction accordingly to North Pole	*/
 	double gps_latitude;
 	double gps_longitude;
-	int slope;		/**<	Slope accordingly to horizontal positions */
+    int pitch;		/**<	Slope accordingly to horizontal positions up/down   */
+    int roll;		/**<	Slope accordingly to horizontal positions left/right */
     float battery_charge; /**<    In voltages */
 	char info[100];
 } status_packet_s;

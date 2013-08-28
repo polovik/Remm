@@ -41,12 +41,13 @@ Item {
 
         Canvas {
             id: outboardDisplayCanvas
+            objectName: "outboardDisplayCanvas"
             x: 640
             y: 242
             width: 200
             height: 200
-            property int tangageAngle: 8 //  in range [-180, 180]
-            property int heelAngle: 5
+            property int tangageAngle: 0 //  in range [-180, 180]
+            property int heelAngle: 0
             onPaint: {
                 var ctx = outboardDisplayCanvas.getContext('2d')
 
@@ -190,15 +191,24 @@ Item {
                 ctx.fill()
                 ctx.stroke()
             }
+            function updatePitch(pitch) {
+                curDirection = pitch
+                requestPaint()
+            }
+            function updateRoll(roll) {
+                heelAngle = roll
+                requestPaint()
+            }
         }
 
         Canvas {
             id: heightCanvas
+            objectName: "heightCanvas"
             x: 640
             y: 15
             width: 70
             height: 148
-            property int currentHeight: 323
+            property int currentHeight: 0
             onPaint: {
                 var ctx = heightCanvas.getContext('2d')
                 var areaWidth = width * 0.7
@@ -261,10 +271,15 @@ Item {
 
                 ctx.resetTransform()
             }
+            function updateHeight(height) {
+                currentHeight = height
+                requestPaint()
+            }
         }
 
         Canvas {
             id: compassCanvas
+            objectName: "compassCanvas"
             x: 640
             y: 161
             width: 279
@@ -391,6 +406,10 @@ Item {
                 ctx.stroke()
                 ctx.resetTransform()
             }
+            function updateHeading(heading) {
+                curDirection = heading
+                requestPaint()
+            }
         }
 
         Label {
@@ -479,8 +498,8 @@ Item {
             y: 262
             width: 86
             height: 192
-            property int level: 20
-            property double voltage: 10.10 // max 2 number after point
+            property int level: 0
+            property double voltage: 0.00 // max 2 number after point
             onPaint: {
                 var ctx = canvasBattery.getContext('2d')
 
@@ -527,7 +546,7 @@ Item {
             id: slider__horizontal_1
             x: 735
             y: 133
-            value: 10
+            value: 0
             tickmarksEnabled: true
             stepSize: 0.1
             maximumValue: 11.1

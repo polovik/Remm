@@ -106,6 +106,10 @@ void Connection::data_rx(unsigned char *data, unsigned int length)
 //            status_packet->height, status_packet->direction, status_packet->gps_latitude,
 //            status_packet->gps_longitude, status_packet->slope, status_packet->battery_charge, status_packet->info);
     emit gpsPosReceived(status_packet->gps_latitude, status_packet->gps_longitude);
+    emit heightReceived(status_packet->height);
+    emit pitchReceived(status_packet->pitch);
+    emit rollReceived(status_packet->roll);
+    emit headingReceived(status_packet->heading);
     emit batteryLevelReceived(status_packet->battery_charge);
 }
 

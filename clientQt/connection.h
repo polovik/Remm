@@ -25,6 +25,10 @@ private:
 signals:
     void pictureReceived(QImage jpgImage);
     void gpsPosReceived(float Lat, float Lon);
+    void heightReceived(QVariant height);
+    void pitchReceived(QVariant pitch);
+    void rollReceived(QVariant roll);
+    void headingReceived(QVariant heading);
     void batteryLevelReceived(QVariant voltage);
 
 public slots:

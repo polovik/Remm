@@ -16,6 +16,7 @@
 *.out
 *.app
 server/server
+clientQt/clientQt
 
 # Eclipse
 .cproject
@@ -24,6 +25,10 @@ server/server
 
 # Debug temporary directory
 *-Debug/
+
+# Qt temporary files
+moc_*
+clientQt/Makefile
 
 # Qt user project file
 clientQt.pro.user
