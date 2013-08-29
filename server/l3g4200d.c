@@ -126,6 +126,7 @@ int init_l3g4200d(l3g4200d_range_e range)
     1-0  OUT_SEL   Out selection config                               00 */
     /* Nothing to do ... keep default values */
     
+    printf("INFO  %s() L3G4200D is successfully initiated.\n", __FUNCTION__);
     return 0;
 }
 

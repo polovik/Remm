@@ -39,7 +39,7 @@ void *sensors_polling(void *arg)
     printf("INFO  %s() Start sensors polling.\n", __FUNCTION__);
     
     while (exit_thread == 0) {
-        usleep(1000000);
+        usleep(500000);
         
         //  ADC
         if (indications.worked_sensors & SENSOR_ADC) {
@@ -84,6 +84,7 @@ int init_sensors()
     int ret;
     
     exit_thread = 0;
+    memset(&indications, 0x00, sizeof(indications_t));
     indications.worked_sensors = SENSOR_ALL_DISABLED;
     
     if (init_i2c() != 0) {
@@ -127,7 +128,6 @@ int init_sensors()
     else
         printf("ERROR %s() Can't initialize L3G4200D sensor (Gyroscope)\n", __FUNCTION__);
         
-    memset(&indications, 0x00, sizeof(indications_t));
     ret = pthread_create(&sensors_thread, NULL, sensors_polling, NULL);
     if (ret != 0) {
         perror("Starting sensors thread");
