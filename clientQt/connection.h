@@ -17,11 +17,11 @@ private:
     void data_rx(unsigned char *data, unsigned int length);
     void picture_rx(unsigned char *data, unsigned int length);
     int picture_assembly(unsigned char *data, unsigned int length);
-
+    
     QUdpSocket *udpSocket;
     QTimer retransmitTimer;
     control_packet_s controlPacket;
-
+    
 signals:
     void pictureReceived(QImage jpgImage);
     void gpsPosReceived(float Lat, float Lon);
@@ -30,7 +30,7 @@ signals:
     void rollReceived(QVariant roll);
     void headingReceived(QVariant heading);
     void batteryLevelReceived(QVariant voltage);
-
+    
 public slots:
     void tryDirectConnectToRPi(QString address, quint16 port, unsigned int frameWidth,
                                unsigned int frameHeight, unsigned int exposure_type,
@@ -38,7 +38,7 @@ public slots:
     void updateCameraSettings(float fps);
     void updatePosition(int direction);
     void send_command();
-
+    
 private slots:
     void startCommunicate();
     void udpError(QAbstractSocket::SocketError error);

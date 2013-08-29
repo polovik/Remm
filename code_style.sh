@@ -1,0 +1,1 @@
+astyle --brackets=linux --indent=spaces=4 --indent-preprocessor --min-conditional-indent=0 --max-instatement-indent=40 --pad-oper --unpad-paren  --pad-header --fill-empty-lines --align-pointer=name --convert-tabs --lineend=linux --formatted `find ./ -type f -name '*.c' -or -name '*.h' -or -name '*.cpp'`

@@ -15,15 +15,15 @@ class MainWindow : public QObject
 public:
     explicit MainWindow(QObject *parent = 0);
     void showQmlView(QGuiApplication *app);
-
+    
 private:
     QQuickView *qmlView;
     QQuickWebView *webView;
     CameraSource *cameraSource;
     Connection *connection;
-
-signals:
     
+signals:
+
 public slots:
     void displayGPSposition(float Lat, float Lon);
     void zoomMap(int zoom);

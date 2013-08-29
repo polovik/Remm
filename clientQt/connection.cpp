@@ -16,10 +16,10 @@ Connection::Connection(QObject *parent) :
             this, SLOT(udpError(QAbstractSocket::SocketError)));
     connect(udpSocket, SIGNAL(stateChanged(QAbstractSocket::SocketState)),
             this, SLOT(udpStateChanged(QAbstractSocket::SocketState)));
-
+            
     retransmitTimer.setInterval(RETRANSMIT_COMMAND_INTERVAL);
     connect(&retransmitTimer, SIGNAL(timeout()), this, SLOT(send_command()));
-
+    
     memset(&controlPacket, 0x00, sizeof(control_packet_s));
 }
 
@@ -30,7 +30,7 @@ void Connection::tryDirectConnectToRPi(QString address, quint16 port, unsigned i
     qDebug() << typeid(*this).name() << ":" << __FUNCTION__ << "()"
              << frameWidth << frameHeight << exposure_type << exposure_value << quality;
     udpSocket->close();
-
+    
     memset(&controlPacket, 0x00, sizeof(control_packet_s));
     controlPacket.magic = MAGIC_COMMAND;
     controlPacket.height = 0;
@@ -45,7 +45,7 @@ void Connection::tryDirectConnectToRPi(QString address, quint16 port, unsigned i
     controlPacket.camera.exposure_value = exposure_value;
     controlPacket.camera.fps = 1.0;
     controlPacket.command = AUTOPILOT_OFF;
-
+    
     udpSocket->connectToHost(address, port);
 }
 
@@ -65,7 +65,7 @@ void Connection::startCommunicate()
 {
     qDebug() << typeid(*this).name() << ":" << __FUNCTION__ << "()";
     udpSocket->write("Hello!");
-
+    
     retransmitTimer.start();
 //    qDebug() << __PRETTY_FUNCTION__;
 }
@@ -89,7 +89,7 @@ static status_packet_s last_status;
 void Connection::data_rx(unsigned char *data, unsigned int length)
 {
     status_packet_s *status_packet;
-
+    
     if (length != sizeof(status_packet_s)) {
         qDebug("ERROR %s() Unexpected packet size %d: %.*s", __FUNCTION__, length, length, data);
         return;
@@ -99,7 +99,7 @@ void Connection::data_rx(unsigned char *data, unsigned int length)
         qDebug("ERROR %s() Unexpected packet type 0x%08X: %.*s", __FUNCTION__, status_packet->magic, length, data);
         return;
     }
-
+    
     memcpy(&last_status, status_packet, sizeof(status_packet_s));
 //    qDebug("INFO  %s() height=%d, direction=%d, gps_latitude=%f, gps_longitude=%f, "
 //            "slope=%d, battery_charge=%f, info=%s.", __FUNCTION__,
@@ -121,18 +121,18 @@ void Connection::picture_rx(unsigned char *data, unsigned int length)
         qDebug("ERROR %s() Incorrect arguments data=0x%X, length=%d", __FUNCTION__, (unsigned int)data, length);
         return;
     }
-
+    
     QImage jpgImage;
     jpgImage.loadFromData(data, length, "JPG");
     emit pictureReceived(jpgImage);
-
+    
 //    char filename[] = "captured.jpg";
 //    FILE *file = fopen(filename, "wb");
 //    fwrite(data, 1, length, file);
 //    fclose(file);
 }
 
-/**	Check for picture inside packet.
+/** Check for picture inside packet.
  *  Return 1 if picture has found. Otherwise return 0.
  */
 int Connection::picture_assembly(unsigned char *data, unsigned int length)
@@ -140,11 +140,11 @@ int Connection::picture_assembly(unsigned char *data, unsigned int length)
     static picture_packet_s prev_packet = { /*magic*/ MAGIC_STATUS, /*picture_id*/ -1, /*picture_size*/ 0, /*fragment_id*/ 0, /*fragment_size*/ 0, /*data*/ "" } ;
     static unsigned char *picture;
     picture_packet_s *packet = (picture_packet_s *)data;
-
+    
     Q_UNUSED(length);
     if (packet->magic != MAGIC_PICTURE)
         return 0;
-
+        
     if (packet->picture_id < prev_packet.picture_id) {
         qDebug("INFO  %s() Received frame %d for old picture %d. Skip it.",
                __FUNCTION__, packet->picture_id, prev_packet.picture_id);
@@ -174,7 +174,7 @@ void Connection::readPendingDatagram()
     unsigned int length = udpSocket->bytesAvailable();
 //    qDebug() << typeid(*this).name() << ":" << __FUNCTION__ << "()"
 //             << "Received" << length << "bytes";
-    data = new (nothrow) unsigned char[length];
+    data = new(nothrow) unsigned char[length];
     if (data == NULL) {
         qDebug() << typeid(*this).name() << ":" << __FUNCTION__ << "()"
                  << "Can't allocate" << length << "bytes for datagramm";
@@ -187,10 +187,10 @@ void Connection::readPendingDatagram()
         delete[] data;
         return;
     }
-
+    
     if (picture_assembly(data, length) == 1)
         return;
-
+        
     data_rx(data, length);
     delete[] data;
 }

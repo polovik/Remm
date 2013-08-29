@@ -32,9 +32,9 @@ TestRef run_hmc5883l_tests(void)
 {
     EMB_UNIT_TESTFIXTURES(fixtures) {
         new_TestFixture("test_init", test_init),
-        new_TestFixture("test_get_heading", test_get_heading),
+                        new_TestFixture("test_get_heading", test_get_heading),
     };
-
+    
     EMB_UNIT_TESTCALLER(hmc5883l_test, "HMC5883L_Test", setUp, tearDown, fixtures);
     return (TestRef)&hmc5883l_test;
 }

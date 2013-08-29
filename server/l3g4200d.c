@@ -11,7 +11,7 @@ int init_l3g4200d(l3g4200d_range_e range)
     int ret;
     uint8_t data[32];
     uint8_t data_len;
-
+    
     /*  Check chip ID   */
     data[0] = L3G4200D_REGISTER_WHO_AM_I;
     data_len = 1;
@@ -31,7 +31,7 @@ int init_l3g4200d(l3g4200d_range_e range)
         printf("ERROR %s() Incorrect chip ID(0x%02X) of L3G4200D sensor.\n", __FUNCTION__, data[0]);
         return -1;
     }
-
+    
     /*  Set CTRL_REG1 (0x20)
     ====================================================================
     BIT  Symbol    Description                                   Default
@@ -52,7 +52,7 @@ int init_l3g4200d(l3g4200d_range_e range)
                __FUNCTION__, L3G4200D_REGISTER_CTRL_REG1);
         return -1;
     }
-
+    
     /*  Set CTRL_REG2 (0x21)
     ====================================================================
     BIT  Symbol    Description                                   Default
@@ -60,7 +60,7 @@ int init_l3g4200d(l3g4200d_range_e range)
     5-4  HPM1/0    High-pass filter mode selection                    00
     3-0  HPCF3..0  High-pass filter cutoff frequency selection      0000 */
     /*  Nothing to do ... keep default values */
-
+    
     /*  Set CTRL_REG3 (0x22)
     ====================================================================
     BIT  Symbol    Description                                   Default
@@ -74,38 +74,38 @@ int init_l3g4200d(l3g4200d_range_e range)
      1  I2_ORun   FIFO overrun int on DRDY/INT2 (0=dsbl,1=enbl)       0
      0  I2_Empty  FIFI empty int on DRDY/INT2 (0=dsbl,1=enbl)         0 */
     /*  Nothing to do ... keep default values */
-
+    
     /*  Set CTRL_REG4 (0x23)
     ====================================================================
     BIT  Symbol    Description                                   Default
     ---  ------    --------------------------------------------- -------
      7  BDU       Block Data Update (0=continuous, 1=LSB/MSB)         0
      6  BLE       Big/Little-Endian (0=Data LSB, 1=Data MSB)          0
-   5-4  FS1/0     Full scale selection                               00
+    5-4  FS1/0     Full scale selection                               00
                       00 = 250 dps
                       01 = 500 dps
                       10 = 2000 dps
                       11 = 2000 dps
-   2-1  ST1/0     Self Test Enable (0=Disabled)                      00
+    2-1  ST1/0     Self Test Enable (0=Disabled)                      00
      0  SIM       SPI Mode (0=4-wire, 1=3-wire)                       0 */
     /* Adjust resolution if requested */
     data[0] = L3G4200D_REGISTER_CTRL_REG4;
     switch (range) {
-        case L3G4200D_RANGE_250DPS:
-            data[1] = 0x00;
-            sensitivity = L3G4200D_SENSITIVITY_250DPS;
-            break;
-        case L3G4200D_RANGE_500DPS:
-            data[1] = 0x10;
-            sensitivity = L3G4200D_SENSITIVITY_500DPS;
-            break;
-        case L3G4200D_RANGE_2000DPS:
-            data[1] = 0x20;
-            sensitivity = L3G4200D_SENSITIVITY_2000DPS;
-            break;
-        default:
-            printf("ERROR %s() Invalid range L3G4200D 0x%02X.\n", __FUNCTION__, range);
-            return -1;
+    case L3G4200D_RANGE_250DPS:
+        data[1] = 0x00;
+        sensitivity = L3G4200D_SENSITIVITY_250DPS;
+        break;
+    case L3G4200D_RANGE_500DPS:
+        data[1] = 0x10;
+        sensitivity = L3G4200D_SENSITIVITY_500DPS;
+        break;
+    case L3G4200D_RANGE_2000DPS:
+        data[1] = 0x20;
+        sensitivity = L3G4200D_SENSITIVITY_2000DPS;
+        break;
+    default:
+        printf("ERROR %s() Invalid range L3G4200D 0x%02X.\n", __FUNCTION__, range);
+        return -1;
     }
     data_len = 2;
     ret = i2c_write(L3G4200D_I2C_ADDRESS, data, data_len);
@@ -114,7 +114,7 @@ int init_l3g4200d(l3g4200d_range_e range)
                __FUNCTION__, L3G4200D_REGISTER_CTRL_REG4);
         return -1;
     }
-
+    
     /* Set CTRL_REG5 (0x24)
     ====================================================================
     BIT  Symbol    Description                                   Default
@@ -125,7 +125,7 @@ int init_l3g4200d(l3g4200d_range_e range)
     3-2  INT1_SEL  INT1 Selection config                              00
     1-0  OUT_SEL   Out selection config                               00 */
     /* Nothing to do ... keep default values */
-
+    
     return 0;
 }
 
@@ -140,9 +140,9 @@ int l3g4200d_get_data(l3g4200d_angular_rates_s *rates)
     int ret;
     short angular_rate;
     uint8_t data;
-
+    
     printf("INFO  %s() L3G4200D sensitivity = %f\n", __FUNCTION__, sensitivity);
-
+    
     /*  Reading Axes XZY */
     ret = i2c_read_byte(L3G4200D_I2C_ADDRESS, L3G4200D_REGISTER_OUT_X_L, &data, "L3G4200D");
     if (ret < 0)
@@ -154,7 +154,7 @@ int l3g4200d_get_data(l3g4200d_angular_rates_s *rates)
     angular_rate = (data << 8) | angular_rate;
     rates->x = angular_rate * sensitivity;
     printf("INFO  %s() L3G4200D angular rate X = %f\n", __FUNCTION__, rates->x);
-
+    
     ret = i2c_read_byte(L3G4200D_I2C_ADDRESS, L3G4200D_REGISTER_OUT_Y_L, &data, "L3G4200D");
     if (ret < 0)
         return -1;
@@ -165,8 +165,8 @@ int l3g4200d_get_data(l3g4200d_angular_rates_s *rates)
     angular_rate = (data << 8) | angular_rate;
     rates->y = angular_rate * sensitivity;
     printf("INFO  %s() L3G4200D angular rate Y = %f\n", __FUNCTION__, rates->y);
-
-
+    
+    
     ret = i2c_read_byte(L3G4200D_I2C_ADDRESS, L3G4200D_REGISTER_OUT_Z_L, &data, "L3G4200D");
     if (ret < 0)
         return -1;
@@ -177,7 +177,7 @@ int l3g4200d_get_data(l3g4200d_angular_rates_s *rates)
     angular_rate = (data << 8) | angular_rate;
     rates->z = angular_rate * sensitivity;
     printf("INFO  %s() L3G4200D angular rate Z = %f\n", __FUNCTION__, rates->z);
-
+    
     return 0;
 }
 
@@ -186,7 +186,7 @@ int l3g4200d_get_temperature(int *temperature)
     int ret;
     uint8_t data[32];
     uint8_t data_len;
-
+    
     data[0] = L3G4200D_REGISTER_OUT_TEMP;
     data_len = 1;
     ret = i2c_write(L3G4200D_I2C_ADDRESS, data, data_len);
@@ -203,6 +203,6 @@ int l3g4200d_get_temperature(int *temperature)
     }
     *temperature = data[0];
     printf("INFO  %s() L3G4200D temperature = %d(0x%02X)\n", __FUNCTION__, *temperature, data[0]);
-
+    
     return 0;
 }

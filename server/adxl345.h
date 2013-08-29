@@ -2,7 +2,7 @@
 #define ADXL345_H
 
 #define ADXL345_I2C_ADDRESS             (0x53)
-#define ADXL345_CHIPID                	(0xE5)
+#define ADXL345_CHIPID                  (0xE5)
 
 /*  REGISTERS   */
 #define ADXL345_REG_DEVID               (0x00)    // Device ID

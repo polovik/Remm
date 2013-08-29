@@ -4,7 +4,7 @@
 #define HMC5883L_I2C_ADDRESS    (0x1E)
 #define HMC5883L_CHIPID         (0x483433) // id registers A,B,C
 
-/*	HMC5883L REGISTERS	*/
+/*  HMC5883L REGISTERS  */
 enum {
     HMC5883L_REGISTER_CONFIGURATION_A       = 0x00,  // R/W
     HMC5883L_REGISTER_CONFIGURATION_B       = 0x01,  // R/W
@@ -21,7 +21,7 @@ enum {
     HMC5883L_REGISTER_IDENTIFICATION_C      = 0x0C   // R
 };
 
-/*	HMC5883L operation mode	*/
+/*  HMC5883L operation mode */
 typedef enum {
     HMC5883L_MODE_CONTINUOUS_MEASUREMENT = 0,
     HMC5883L_MODE_SINGLE_MEASUREMENT     = 1,

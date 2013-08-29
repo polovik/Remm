@@ -12,7 +12,7 @@ int init_hmc5883l(int field_range, int data_rate, hmc5883l_mode_t mode)
     unsigned int chipid = 0;
     uint8_t data[32];
     uint8_t data_len;
-
+    
     data[0] = HMC5883L_REGISTER_IDENTIFICATION_A;
     data_len = 1;
     ret = i2c_write(HMC5883L_I2C_ADDRESS, data, data_len);
@@ -21,7 +21,7 @@ int init_hmc5883l(int field_range, int data_rate, hmc5883l_mode_t mode)
                __FUNCTION__, HMC5883L_REGISTER_IDENTIFICATION_A);
         return -1;
     }
-
+    
     data_len = 3;
     ret = i2c_read(HMC5883L_I2C_ADDRESS, data, data_len);
     if (ret < 0) {
@@ -33,7 +33,7 @@ int init_hmc5883l(int field_range, int data_rate, hmc5883l_mode_t mode)
         printf("ERROR %s() Incorrect chip ID(0x%X) of HMC5883L sensor.\n", __FUNCTION__, chipid);
         return -1;
     }
-
+    
     /*  Set smoothing period and data rate  */
     if ((data_rate < 0) || (data_rate > 6)) {
         printf("ERROR %s() Incorrect data rate(0x%X) of HMC5883L sensor.\n", __FUNCTION__, data_rate);
@@ -52,10 +52,10 @@ int init_hmc5883l(int field_range, int data_rate, hmc5883l_mode_t mode)
     ret = i2c_write(HMC5883L_I2C_ADDRESS, data, data_len);
     if (ret < 0) {
         printf("ERROR %s() Can't write 0x%02X to HMC5883L register 0x%02X.\n", __FUNCTION__,
-                conf_reg_a, HMC5883L_REGISTER_CONFIGURATION_A);
+               conf_reg_a, HMC5883L_REGISTER_CONFIGURATION_A);
         return -1;
     }
-
+    
     /*  Set gain factor (magnetic field range)  */
     if ((field_range < 0) || (field_range > 7)) {
         printf("ERROR %s() Incorrect field range(0x%X) of HMC5883L sensor.\n", __FUNCTION__, field_range);
@@ -69,21 +69,38 @@ int init_hmc5883l(int field_range, int data_rate, hmc5883l_mode_t mode)
     ret = i2c_write(HMC5883L_I2C_ADDRESS, data, data_len);
     if (ret < 0) {
         printf("ERROR %s() Can't write 0x%02X to HMC5883L register 0x%02X.\n", __FUNCTION__,
-                conf_reg_b, HMC5883L_REGISTER_CONFIGURATION_B);
+               conf_reg_b, HMC5883L_REGISTER_CONFIGURATION_B);
         return -1;
     }
     switch (field_range) {
-        case 0: scale = 0.73; break;
-        case 1: scale = 0.92; break;
-        case 2: scale = 1.22; break;
-        case 3: scale = 1.52; break;
-        case 4: scale = 2.27; break;
-        case 5: scale = 2.56; break;
-        case 6: scale = 3.03; break;
-        case 7: scale = 4.35; break;
-        default: return -1;
+    case 0:
+        scale = 0.73;
+        break;
+    case 1:
+        scale = 0.92;
+        break;
+    case 2:
+        scale = 1.22;
+        break;
+    case 3:
+        scale = 1.52;
+        break;
+    case 4:
+        scale = 2.27;
+        break;
+    case 5:
+        scale = 2.56;
+        break;
+    case 6:
+        scale = 3.03;
+        break;
+    case 7:
+        scale = 4.35;
+        break;
+    default:
+        return -1;
     }
-
+    
     /*  Set measurement mode    */
     unsigned char mode_reg;
     if ((mode == HMC5883L_MODE_CONTINUOUS_MEASUREMENT) || (mode == HMC5883L_MODE_SINGLE_MEASUREMENT))
@@ -98,12 +115,12 @@ int init_hmc5883l(int field_range, int data_rate, hmc5883l_mode_t mode)
     ret = i2c_write(HMC5883L_I2C_ADDRESS, data, data_len);
     if (ret < 0) {
         printf("ERROR %s() Can't write 0x%02X to HMC5883L register 0x%02X.\n", __FUNCTION__,
-                mode_reg, HMC5883L_REGISTER_MODE);
+               mode_reg, HMC5883L_REGISTER_MODE);
         return -1;
     }
-
+    
     printf("INFO  %s() HMC5883L is successfully initiated.\n", __FUNCTION__);
-
+    
     return 0;
 }
 
@@ -117,7 +134,7 @@ int hmc5883l_get_heading(hmc5883l_axes_t axes)
 {
     float heading_rad = atan2(axes.y, axes.x);
     printf("INFO  %s() Heading radians: %f\n", __FUNCTION__, heading_rad);
-
+    
     //  Correct for reversed heading
 //    if (heading_rad < 0)
 //        heading_rad += 2 * M_PI;
@@ -146,7 +163,7 @@ int hmc5883l_get_status(int *locked, int *ready)
     int ret;
     uint8_t data[32];
     uint8_t data_len;
-
+    
     data[0] = HMC5883L_REGISTER_STATUS;
     data_len = 1;
     ret = i2c_write(HMC5883L_I2C_ADDRESS, data, data_len);
@@ -176,7 +193,7 @@ int hmc5883l_get_axes(hmc5883l_axes_t *axes)
     short axis_reg;
     uint8_t data[32];
     uint8_t data_len;
-
+    
     /*  Reading Axes XZY */
     data[0] = HMC5883L_REGISTER_DATA_X_LSB;
     data_len = 1;
@@ -186,9 +203,9 @@ int hmc5883l_get_axes(hmc5883l_axes_t *axes)
                __FUNCTION__, HMC5883L_REGISTER_DATA_X_LSB);
         return -1;
     }
-
+    
     usleep(67000);
-
+    
     data_len = 6;
     ret = i2c_read(HMC5883L_I2C_ADDRESS, data, data_len);
     if (ret < 0) {
@@ -207,7 +224,7 @@ int hmc5883l_get_axes(hmc5883l_axes_t *axes)
     axis_reg = (data[5] << 8) | data[4];
     axes->y = axis_reg * scale;
     printf("INFO  %s() HMC5883L axis Y(0x%04X) = %f\n", __FUNCTION__, axis_reg, axes->y);
-
+    
 //    printf("INFO  %s() HMC5883L scale = %f\n", __FUNCTION__, scale);
     return 0;
 }
@@ -218,7 +235,7 @@ int hmc5883l_self_test()
 {
     hmc5883l_axes_t axes;
     hmc5883l_mode_t mode = (hmc5883l_mode_t)(HMC5883L_MODE_CONTINUOUS_MEASUREMENT | HMC5883L_SELF_TEST);
-
+    
     if (init_hmc5883l(5, 4, mode) < 0) {
         printf("ERROR %s() Can't init HMC5883L for self-test.\n", __FUNCTION__);
         return -1;

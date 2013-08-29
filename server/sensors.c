@@ -35,18 +35,18 @@ void *sensors_polling(void *arg)
     hmc5883l_axes_t magnetic_axes;
     adxl345_axes_t position_axes;
     l3g4200d_angular_rates_s rates;
-
+    
     printf("INFO  %s() Start sensors polling.\n", __FUNCTION__);
-
+    
     while (exit_thread == 0) {
         usleep(1000000);
-
+        
         //  ADC
         if (indications.worked_sensors & SENSOR_ADC) {
             get_voltage(&voltage);
             indications.battery_charge = voltage;
         }
-
+        
         //  Altitude
         if (indications.worked_sensors & SENSOR_ALTITUDE) {
             temperature = get_temperature(&raw_temperature_reg);
@@ -56,20 +56,20 @@ void *sensors_polling(void *arg)
             printf("INFO  %s() Pressure = %f Pa\n", __FUNCTION__, pressure);
             printf("INFO  %s() Altitude = %f m\n", __FUNCTION__, indications.altitude);
         }
-
+        
         //  Magnetometer
         if (indications.worked_sensors & SENSOR_MAGNETOMETER) {
             hmc5883l_get_axes(&magnetic_axes);
             hmc5883l_get_heading(magnetic_axes);
         }
-
+        
         //  Accelerometer
         if (indications.worked_sensors & SENSOR_ACCELEROMETER) {
             adxl345_get_axes(&position_axes);
             indications.pitch = position_axes.y;
             indications.roll = position_axes.x;
         }
-
+        
         //  Gyroscope
         if (indications.worked_sensors & SENSOR_GYROSCOPE) {
             l3g4200d_get_data(&rates);
@@ -82,27 +82,27 @@ void *sensors_polling(void *arg)
 int init_sensors()
 {
     int ret;
-
+    
     exit_thread = 0;
     indications.worked_sensors = SENSOR_ALL_DISABLED;
-
+    
     if (init_i2c() != 0) {
         printf("ERROR %s() Can't initialize I2C bus\n", __FUNCTION__);
         return -1;
     }
-
+    
     ret = init_adc(1);
     if (ret == 0)
         indications.worked_sensors |= SENSOR_ADC;
     else
         printf("ERROR %s() Can't initialize ADC sensor\n", __FUNCTION__);
-
+        
     ret = init_bmp085(BMP085_MODE_ULTRAHIGHRES);
     if (ret == 0)
         indications.worked_sensors |= SENSOR_ALTITUDE;
     else
         printf("ERROR %s() Can't initialize BMP085 sensor (Pressure)\n", __FUNCTION__);
-
+        
     ret = hmc5883l_self_test();
     if (ret == 0) {
         sleep(1);
@@ -114,28 +114,28 @@ int init_sensors()
     } else {
         printf("ERROR %s() Can't test HMC5883L sensor (Magnetometer)\n", __FUNCTION__);
     }
-
+    
     ret = init_adxl345(ADXL345_DATARATE_100_HZ, ADXL345_RANGE_2_G);
     if (ret == 0)
         indications.worked_sensors |= SENSOR_ACCELEROMETER;
     else
         printf("ERROR %s() Can't initialize ADXL345 sensor (Accelerometer)\n", __FUNCTION__);
-
+        
     ret = init_l3g4200d(L3G4200D_RANGE_2000DPS);
     if (ret == 0)
         indications.worked_sensors |= SENSOR_GYROSCOPE;
     else
         printf("ERROR %s() Can't initialize L3G4200D sensor (Gyroscope)\n", __FUNCTION__);
-
+        
     memset(&indications, 0x00, sizeof(indications_t));
     ret = pthread_create(&sensors_thread, NULL, sensors_polling, NULL);
     if (ret != 0) {
         perror("Starting sensors thread");
         return -1;
     }
-
+    
     printf("INFO  %s() Sensors are successfully initiated.\n", __FUNCTION__);
-
+    
     return 0;
 }
 

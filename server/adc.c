@@ -6,7 +6,7 @@ int init_adc(int rate)
 {
     int ret;
     uint8_t chip_id;
-
+    
     ret = i2c_read_byte(ADC_I2C_ADDRESS, ADC_REGISTER_CHIPID, &chip_id, "ADC");
     if (ret < 0)
         return -1;
@@ -14,9 +14,9 @@ int init_adc(int rate)
         printf("ERROR %s() Incorrect chip ID(0x%02X) of ADC sensor.\n", __FUNCTION__, chip_id);
         return -1;
     }
-
+    
     printf("INFO  %s() ADC is successfully initiated.\n", __FUNCTION__);
-
+    
     return 0;
 }
 
@@ -30,7 +30,7 @@ int get_voltage(float *voltage)
     int ret;
     uint8_t data[32];
     uint8_t data_len;
-
+    
     data[0] = ADC_REGISTER_VOLTAGE;
     data_len = 1;
     ret = i2c_write(ADC_I2C_ADDRESS, data, data_len);
@@ -48,6 +48,6 @@ int get_voltage(float *voltage)
     *voltage = ((data[1] << 8) | data[0]) / 1024.;
     printf("INFO  %s() ADC voltage: 0x%02X, 0x%02X -> %f\n",
            __FUNCTION__, data[0], data[1], *voltage);
-
+           
     return 0;
 }

@@ -5,7 +5,7 @@ CameraSource::CameraSource(QSize size, QObject *parent) :
     QObject(parent)
 {
     m_size = size;
-    m_format = 	QVideoSurfaceFormat(m_size, QVideoFrame::Format_RGB32, QAbstractVideoBuffer::NoHandle);
+    m_format = QVideoSurfaceFormat(m_size, QVideoFrame::Format_RGB32, QAbstractVideoBuffer::NoHandle);
 }
 
 void CameraSource::setVideoSurface(QAbstractVideoSurface *surface)
